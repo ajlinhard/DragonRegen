@@ -20,4 +20,7 @@ Cassandra Access through docker:
         - describe spark_streams.created_users;
         - select * from spark_streams.created_users;
 
-C:\Users\dalej\Documents\_Coding\DragonFlow\
+## Outstanding Questions:
+    1. How does the spark queue work? EX: spark-submit --master spark://localhost:7077 spark_stream.py
+        a. Could I include this submit into the Airflow DAG created for the project?
+    2. How can kafka be configured to run across multiple containers or servers?
