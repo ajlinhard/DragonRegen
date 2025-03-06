@@ -4,8 +4,29 @@ This document walksthrough the process for making a system or pipeline into the 
 ## Videos:
 1. Helpful run quick rundown
 https://www.youtube.com/watch?v=YLtlz88zrLg
-2. Detailed Overview of Terraform
+2. Detailed Overview of Github Actions
 https://www.youtube.com/watch?v=a5qkPEod9ng
+
+
+## Github Documentation Help
+### Understanding Github Actions
+Use for basic terminology and high-level ideas for workflows: https://docs.github.com/en/actions/about-github-actions/understanding-github-actions
+
+### Workflows: is a configurable automated process that will run one or more jobs.
+- Workflow Syntax: https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions
+- Resuable Workflows: https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+- Python Workflows Overview: https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python
+
+### Events: is a specific activity in a repository that triggers a workflow run.
+
+### Jobs: is a set of steps in a workflow that is executed on the same runner. They can have dependencies on other jobs.
+Steps: is either a shell script that will be executed, or an action that will be run.
+
+### Actions: is a custom application for the GitHub Actions platform that performs a complex but frequently repeated task.
+- Create/Use secrets in the actions: https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
+
+### Runners: is a server that runs your workflows when they're triggered. Each runner can run a single job at a time.
+- Nekto Act (a local workflow runner): https://nektosact.com/usage/index.html
 
 # Setup Steps
 Here's a step-by-step process for setting up GitHub Actions to build and test a repository using Docker:
