@@ -1,6 +1,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
-from services.book_service import BookService
+# There is an issue when running app.py vs pytest where the path requres no "." in front of the path and then requires 2 "." in front of the path
+from ..services.book_service import BookService
 
 class BookListResource(Resource):
     def __init__(self):
