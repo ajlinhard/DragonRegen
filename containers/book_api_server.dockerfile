@@ -11,13 +11,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code to the working directory
-COPY . .
+COPY ./src /src
 
 # Expose port 5000 for the Flask application
 EXPOSE 5000
 
 # Set environment variables
-ENV FLASK_APP=app.py
+ENV FLASK_APP=/src/Book_API/app.py
 ENV FLASK_ENV=production
 
 # Command to run the application

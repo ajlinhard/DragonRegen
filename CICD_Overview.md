@@ -7,6 +7,11 @@ https://www.youtube.com/watch?v=YLtlz88zrLg
 2. Detailed Overview of Github Actions
 https://www.youtube.com/watch?v=a5qkPEod9ng
 
+## Docker Builds
+Option 1: Command line
+docker build -t book-api-test -f C:\Users\dalej\Documents\_Coding\DragonRegen\containers\book_api_server.dockerfile
+
+Option 2: Throw github actions
 
 ## Github Documentation Help
 ### Understanding Github Actions
