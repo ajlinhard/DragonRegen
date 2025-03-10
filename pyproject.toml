@@ -20,7 +20,3 @@ python_paths = [
     "src",
     "src/Book_API"
 ]
-testpaths = ["tests"]
-pythonpath = [
-    "."
-]

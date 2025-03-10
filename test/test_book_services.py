@@ -1,7 +1,7 @@
 # Creating test for book api BookService class
 import pytest
 # from Book_API.services.book_service import BookService
-from .services.book_service import BookService
+from services.book_service import BookService
 
 class TestBookService:
     @pytest.fixture
