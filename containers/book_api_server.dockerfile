@@ -1,24 +1,21 @@
-# Use Python 3.11 slim image as base
+# Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# Set working directory in the container
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the application code to the working directory
-COPY . .
+# Copy the current directory contents into the container at /app
+COPY . /app/
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install .
+# Install the package from the directory
+RUN pip install --no-cache-dir -e .
 
-# Expose port 5000 for the Flask application
+# Make port 5000 available to the world outside this container
+# (adjust if your app uses a different port)
 EXPOSE 5000
 
-RUN python /app/src/Book_API/app.py
+# Define environment variable
+ENV PYTHONUNBUFFERED=1
 
-# Set environment variables
-# ENV FLASK_APP=/app/src/Book_API/app.py
-# ENV FLASK_ENV=production
-
-# Command to run the application
-# CMD ["flask", "run", "--host=0.0.0.0"]
+# Run app.py when the container launches
+CMD ["python", "/app/src/Book_API/app.py"]
