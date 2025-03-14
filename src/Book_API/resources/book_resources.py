@@ -3,30 +3,38 @@ from flask_restful import Resource
 # There is an issue when running app.py vs pytest where the path requres no "." in front of the path and then requires 2 "." in front of the path
 from services.book_service import BookService
 
+# Do this to make the book list data persistent until app is closed/restarted
+book_service = BookService()
+
 class BookListResource(Resource):
     def __init__(self):
-        self.book_service = BookService()
+        self.book_service = book_service
 
     def get(self):
         """Retrieve all books"""
         books = self.book_service.get_all_books()
-        return jsonify(books)
+        return books
 
     def post(self):
         """Create a new book"""
+        print('here')
+        print(request)
+        print(request.json)
+        print(request.data)
+        print('done')
         book_data = request.json
         new_book = self.book_service.create_book(book_data)
-        return jsonify(new_book), 201
+        return new_book, 201
 
 class BookResource(Resource):
     def __init__(self):
-        self.book_service = BookService()
+        self.book_service = book_service
 
     def get(self, book_id):
         """Retrieve a specific book by ID"""
         book = self.book_service.get_book_by_id(book_id)
         if book:
-            return jsonify(book)
+            return book
         return {'message': 'Book not found'}, 404
 
     def put(self, book_id):

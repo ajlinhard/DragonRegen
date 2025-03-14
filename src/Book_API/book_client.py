@@ -20,7 +20,7 @@ class BookAPIClient:
             f'{self.base_url}/books', 
             json=book_data
         )
-        return response.json()
+        return response
 
     def update_book(self, book_id, book_data):
         """Update an existing book"""
@@ -28,7 +28,7 @@ class BookAPIClient:
             f'{self.base_url}/books/{book_id}', 
             json=book_data
         )
-        return response.json()
+        return response
 
     def delete_book(self, book_id):
         """Delete a book"""
@@ -50,13 +50,14 @@ def main():
     }
     created_book = client.create_book(new_book)
     print("Created Book:", created_book)
+    print(type(created_book))
     
     # Update the book
-    updated_book = client.update_book(created_book['id'], {"title": "Dune: Updated"})
+    updated_book = client.update_book(created_book.json()['id'], {"title": "Dune: Updated"})
     print("Updated Book:", updated_book)
     
-    # Delete the book
-    client.delete_book(created_book['id'])
+    # # Delete the book
+    # client.delete_book(created_book['id'])
 
 if __name__ == '__main__':
     main()

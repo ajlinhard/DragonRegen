@@ -23,6 +23,25 @@ Cassandra Access through docker:
         a. Could I include this submit into the Airflow DAG created for the project?
     2. How can kafka be configured to run across multiple containers or servers?
 
+# Run Book_API with docker
+1. Download the container from docker hub
+2. Run with docker command
+```bash
+docker run -p 5000:5000 ajlinhard/book-api
+```
+3. Run a test curl command
+```bash
+Test with curl http://localhost:5000/books
+```
+
+Common issues:
+- Using the FLASK_APP environment variable to set the path does not work with how the project is setup. The inheritance is setup from that execution point.
+- The app must be full exposed in docker by using the commmand in number 2, plus when running the flask run method: 
+```python
+if __name__ == '__main__':
+    app = create_app()
+    app.run(host='0.0.0.0', port=5000, debug=True)
+```
 
 # API Section of Project
 ## Adds to requirements.txt
