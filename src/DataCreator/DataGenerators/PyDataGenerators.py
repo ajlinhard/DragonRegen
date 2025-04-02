@@ -55,7 +55,7 @@ class PyDataGenerators():
         max_minute = 59 if i_granularity >= 3 else 0
         max_second = 59 if i_granularity >= 4 else 0
         # Calculate the days difference between start and end dates to allow only 1 random number to be required for date.
-        delta_days = (start - end).days
+        delta_days = (end - start).days
         if delta_days < 0:
             raise ValueError("Start date must be before end date.")
         

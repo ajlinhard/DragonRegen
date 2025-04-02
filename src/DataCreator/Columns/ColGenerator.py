@@ -53,7 +53,9 @@ class ColGenerator(ABC):
         elif isinstance(self.dataType, FloatType):
             return PyDataGenerators.random_floats(i_row_count, 1.0, 100.0)
         elif isinstance(self.dataType, DateType):
-            return PyDataGenerators.random_dates(i_row_count, "2020-01-01", "2023-12-31")
+            return PyDataGenerators.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day")
+        elif isinstance(self.dataType, TimestampNTZType):
+            return PyDataGenerators.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second")
 
     @abstractmethod
     def set_metadata(self, metadata:dict):
