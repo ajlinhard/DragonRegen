@@ -2,6 +2,17 @@
 The project is about creating a data generator in pyspark which can be used to create new data sets of random data or mimic an existing data sets structure. The generators will need to handle data cardinality, uniqueness, cardinality, data type, categorical nature, and more. Data will eventually read and write to tools like Kafka, Cassandra, DynamoDB and more.
 
 
+## Nexts Steps:
+- Abstract Read and Write (based of repository concept)
+- Work on other column generators like catergorical, UID, First/Last name
+- Create pytesting and package
+    - test for data types and count
+    - do speed testing.
+- Add logging both to file and database
+- Add better error handling
+- implement NumPy version of random generator functions (compare speed test)
+    - look into batch or futures for parallel generations.
+
 ## Ideas
 Col Generators:
 - Categorical (using Enum)
