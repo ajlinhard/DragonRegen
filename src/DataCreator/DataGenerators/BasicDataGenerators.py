@@ -8,8 +8,8 @@ class BasicDataGenerators(ABC):
     It includes methods for generating random strings, integers, floats, and dates.
     """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def random_strings(length:int, min_length, max_length, charset=None):
         """G
         Generate a list of random strings of specified lengths.
@@ -17,8 +17,8 @@ class BasicDataGenerators(ABC):
         """
         pass
     
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def random_ints(length:int, min_value:int, max_value:int):
         # Generate a list of random integers
         pass

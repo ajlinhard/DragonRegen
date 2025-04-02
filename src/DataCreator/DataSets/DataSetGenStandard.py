@@ -1,8 +1,8 @@
 
 from pyspark.sql import SparkSession, Catalog
-from pyspark.sql.types import StructType, StructField
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, TimestampType, BooleanType, ArrayType
 from .DataSetGenerator import DataSetGenerator
-from ..Columns.ColGenerator import ColGenerator
+from ..Columns.ColBaseGenerator import ColBaseGenerator
 
 class DataSetGenStandard(DataSetGenerator):
 
@@ -29,12 +29,16 @@ class DataSetGenStandard(DataSetGenerator):
 
         return cls(spark, schema, i_row_count)
 
-    def gererate_data(self):
+    def generate_data(self):
         """
         This method will generate the data based on the schema and row count submitted. Then
         the data will be added to a spark Dataframe.
         """
         # Look at each struct field in the schema and generate the data for that field
+        data = []
         for field in self.schema:
             # Generate the data for the field based on its type
-            ColGenerator.replicate(field).generate_column(self.i_row_count)
+            data.append(ColBaseGenerator.replicate(field).generate_column(self.i_row_count))
+
+        print(f'Generating Rows: {self.i_row_count}, with Columns: {len(data)}')
+        return self.spark.createDataFrame(zip(*data), schema=self.schema)

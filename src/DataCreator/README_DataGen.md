@@ -4,9 +4,9 @@ The project is about creating a data generator in pyspark which can be used to c
 
 ## Ideas
 Col Generators:
-- Categorical
-- Unique IDs
-- Cardinality
+- Categorical (using Enum)
+- Unique IDs (using UUID or other feature)
+- Cardinality 
 
 Data Generators:
 The data generators could all be staticmethods in a class?

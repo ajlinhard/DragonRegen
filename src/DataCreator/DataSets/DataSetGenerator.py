@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 class DataSetGenerator(ABC):
 
     @abstractmethod
-    def gererate_data(self):
+    def generate_data(self):
         """
         This method will initiate the generation of the data for the data set.
         """
