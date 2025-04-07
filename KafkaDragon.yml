@@ -16,4 +16,5 @@ dependencies:
     - apache-airflow
     - kafka-python
     - cassandra-driver
+    - pytest
   
