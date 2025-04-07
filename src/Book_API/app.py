@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
-from resources.book_resources import BookListResource, BookResource
+from Book_API.resources.book_resources import BookListResource, BookResource
 
 def create_app():
     app = Flask(__name__)

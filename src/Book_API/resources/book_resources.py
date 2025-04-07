@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
 # There is an issue when running app.py vs pytest where the path requres no "." in front of the path and then requires 2 "." in front of the path
-from services.book_service import BookService
+from Book_API.services.book_service import BookService
 
 # Do this to make the book list data persistent until app is closed/restarted
 book_service = BookService()
