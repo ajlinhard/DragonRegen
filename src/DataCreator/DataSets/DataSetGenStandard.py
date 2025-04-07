@@ -2,7 +2,8 @@
 from pyspark.sql import SparkSession, Catalog
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, TimestampType, BooleanType, ArrayType
 from .DataSetGenerator import DataSetGenerator
-from ..Columns.ColBaseGenerator import ColBaseGenerator
+from ..ColGenerators.ColBasic import ColBasic
+from ..ColGenerators.StringBasic import StringBasic
 
 class DataSetGenStandard(DataSetGenerator):
 
@@ -38,7 +39,7 @@ class DataSetGenStandard(DataSetGenerator):
         data = []
         for field in self.schema:
             # Generate the data for the field based on its type
-            data.append(ColBaseGenerator.replicate(field).generate_column(self.i_row_count))
+            data.append(ColBasic.replicate(field).generate_column(self.i_row_count))
 
         print(f'Generating Rows: {self.i_row_count}, with Columns: {len(data)}')
         return self.spark.createDataFrame(zip(*data), schema=self.schema)

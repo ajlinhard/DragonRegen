@@ -34,10 +34,34 @@ Unique Key Sets (aka foreign keys)
 Hash or Composite Keys
 - The column is a composite key using an algorithm such as MD5 to hash, or simple separator like "|" ex: "hello|world|!"
 
+--- 
+# Using Data Sets
+--- 
+
+```python
+{"description": "Users can past description of the columns, if the want."
+,"colType": "FirstName"
+, "source": {
+    "engine": "spark", # want generated the data spark, panda, numpy, Databricks, Cassandra
+    "input_data_path": "cloud_url/database_name.schema.table_name.column_name"  # where the data should go. If using data routing feature can be an ID
+    "output_data_path": "cloud_url/database_name.schema.table_name.column_name" # where the data. If using data routing feature can be an ID
+    }
+, "stats":{
+    "unique": True, 
+    "uniqueness_ratio": 1.0, # Value from 0.0 to 1.0 of roughly the percentage of unique values.
+    "cardinality_ratios": {"col1": "1:N", "col2": "1:1", "col3": "N:M"}
+    "min": 1, 
+    "max": None
+    }
+}
+
+```
+
+
 
 --- 
 # Desing Notes:
-
+--- 
 ## Data Generation
 When efficiently generating random data the ask can be difficult to do efficiently. Generating row-wise vs column-wise (vectorized) data can allow for optimizations.
 Options Considered:

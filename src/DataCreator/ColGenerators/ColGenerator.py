@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
 from pyspark.sql.types import *
-from ..DataGenerators.PyDataGenerators import PyDataGenerators
+from ..DataGenerators.PyData import PyData
 
 class ColGenerator(ABC):
     """
@@ -18,7 +18,18 @@ class ColGenerator(ABC):
         self.name = name
         self.dataType = dataType
         self.nullable = nullalbe
-        self.metadata = self.set_metadata(metadata)
+        self.metadata = metadata
+
+    @classmethod
+    @abstractmethod
+    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
+        subclasses = cls.__subclasses__()
+        ls_deprioritize = ["ColBasic"]
+        for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
+            print(f"Checking subclass: {subclass.__name__} and requirements: {subclass.supports_requirements(dataType, nullalbe, metadata)}")
+            if hasattr(subclass, 'supports_requirements') and subclass.supports_requirements(dataType, nullalbe, metadata):
+                return subclass(name, dataType, nullalbe, metadata, **kwargs)
+        raise ValueError(f"No suitable column generator found for {dataType} with nullable={nullalbe} and metadata={metadata}.")
 
     @classmethod
     def replicate(cls, o_field:StructField):
@@ -34,6 +45,22 @@ class ColGenerator(ABC):
         """
         return cls(o_field.name, o_field.dataType, o_field.nullable, o_field.metadata)
 
+    @classmethod
+    @abstractmethod
+    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None) -> bool:
+        """
+        Check if the column generator supports the specified requirements.
+
+        Parameters:
+        dataType (DataType): Data type of the column.
+        nullalbe (bool): Whether the column can contain null values.
+        metadata (dict): Metadata for the column.
+
+        Returns:
+        bool: True if the requirements are supported, False otherwise.
+        """
+        return False
+
     @abstractmethod
     def generate_column(self, i_row_count: int) -> list:
         """
@@ -47,15 +74,15 @@ class ColGenerator(ABC):
         list: Generated column data.
         """
         if isinstance(self.dataType, StringType):
-            return PyDataGenerators.random_strings(i_row_count, 1, 20)
+            return PyData.random_strings(i_row_count, 1, 20)
         elif isinstance(self.dataType, IntegerType):
-            return PyDataGenerators.random_ints(i_row_count, 1, 100)
+            return PyData.random_ints(i_row_count, 1, 100)
         elif isinstance(self.dataType, FloatType):
-            return PyDataGenerators.random_floats(i_row_count, 1.0, 100.0)
+            return PyData.random_floats(i_row_count, 1.0, 100.0)
         elif isinstance(self.dataType, DateType):
-            return PyDataGenerators.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day")
+            return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day")
         elif isinstance(self.dataType, TimestampNTZType):
-            return PyDataGenerators.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second")
+            return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second")
 
     @abstractmethod
     def set_metadata(self, metadata:dict):

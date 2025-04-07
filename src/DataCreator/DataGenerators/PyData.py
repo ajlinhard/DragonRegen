@@ -2,9 +2,9 @@ import random
 import string
 from datetime import datetime, timedelta, date, time
 
-from .BasicDataGenerators import BasicDataGenerators
+from .BasicData import BasicData
 
-class PyDataGenerators():
+class PyData(BasicData):
     """
     The BasicTypes class provides static methods for generating random data of various basic types.
     It includes methods for generating random strings, integers, floats, and dates.

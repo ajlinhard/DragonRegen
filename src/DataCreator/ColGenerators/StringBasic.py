@@ -1,9 +1,9 @@
 
 from pyspark.sql.types import *
-from ..DataGenerators.PyDataGenerators import PyDataGenerators
+from ..DataGenerators.PyData import PyData
 from .ColGenerator import ColGenerator
 
-class ColBaseGenerator(ColGenerator):
+class StringBasic(ColGenerator):
     """
     Abstract base class for generating columns in a DataFrame.
     """
@@ -12,13 +12,47 @@ class ColBaseGenerator(ColGenerator):
         Initialize the column generator.
 
         Parameters:
-        spark_session (SparkSession): The Spark session to use.
-        schema (StructField): The schema for the column.
         """
-        self.name = name
-        self.dataType = dataType
-        self.nullable = nullalbe
-        self.metadata = self.set_metadata(metadata)
+        super().__init__(name, dataType, nullalbe, metadata)
+
+    @classmethod
+    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
+        """
+        Create an instance of the column generator.
+
+        Parameters:
+        name (str): Name of the column.
+        dataType (DataType): Data type of the column.
+        nullalbe (bool): Whether the column can contain null values.
+        metadata (dict): Metadata for the column.
+
+        Returns:
+        ColGenerator: An instance of the column generator.
+        """
+        # Try to create the string if there are no metadata requirements
+        if dataType in [StringType] and metadata is None and not kwargs:
+            return cls(name, dataType, nullalbe, metadata)
+        subclasses = cls.__subclasses__()
+        for subclass in subclasses:
+            if hasattr(subclass, 'supports_requirements') and subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs):
+                return subclass(name, dataType, nullalbe, metadata, **kwargs)
+        # If no subclass supports the requirements, return the base class
+        return cls(name, dataType, nullalbe, metadata)  
+    
+    @classmethod
+    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
+        """
+        Check if the column generator supports the specified requirements.
+
+        Parameters:
+        dataType (DataType): Data type of the column.
+        nullalbe (bool): Whether the column can contain null values.
+        metadata (dict): Metadata for the column.
+
+        Returns:
+        bool: True if the requirements are supported, False otherwise.
+        """
+        return type(dataType) in [StringType] and metadata is None
 
     @classmethod
     def replicate(cls, o_field:StructField):

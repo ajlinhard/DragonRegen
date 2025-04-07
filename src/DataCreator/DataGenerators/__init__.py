@@ -1,5 +1,5 @@
 
-from .BasicDataGenerators import BasicDataGenerators
-from .NumPyDataGenerators import NumPyDataGenerators
-from .PyDataGenerators import PyDataGenerators
-# from .SparkDataGenerators import SparkDataGenerators
+from .BasicData import BasicData
+from .NumPyData import NumPyData
+from .PyData import PyData
+# from .SparkData import SparkData

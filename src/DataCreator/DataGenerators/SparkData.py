@@ -3,9 +3,9 @@
 # from pyspark.sql import SparkSession
 # from pyspark.sql import functions as F
 # from pyspark.sql.types import StringType, IntegerType
-# from .BasicDataGenerators import BasicDataGenerators
+# from .BasicData import BasicData
 
-# class SparkDataGenerators(BasicDataGenerators):
+# class SparkDataGenerators(BasicData):
 #     """
 #     The BasicTypes class provides static methods for generating random data of various basic types.
 #     It includes methods for generating random strings, integers, floats, and dates.
