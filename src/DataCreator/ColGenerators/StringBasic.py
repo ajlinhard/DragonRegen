@@ -90,28 +90,4 @@ class StringBasic(ColGenerator):
         """
         return super().set_metadata(metadata)
 
-    @property
-    def ColField(self) -> StructField:
-        """
-        Get the StructField for the column.
-
-        Returns:
-        StructField: The schema for the column.
-        """
-        return StructField(self.name, self.dataType, self.nullable, self.metadata)
-    
-    @ColField.setter
-    def ColField(self, value:StructField):
-        """
-        Set the StructField for the column.
-
-        Parameters:
-        value (StructField): The schema for the column.
-        """
-        if not isinstance(value, StructField):
-            raise ValueError("value must be a StructField")
-        self.name = value.name
-        self.dataType = value.dataType
-        self.nullable = value.nullable
-        self.metadata = value.metadata
         

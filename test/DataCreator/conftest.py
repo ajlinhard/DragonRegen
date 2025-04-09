@@ -1,5 +1,7 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.types import *
 import pytest
+from DataGuardian.Column.Compare import Compare
 
 @pytest.fixture(scope="module")
 def spark_session():
@@ -14,3 +16,10 @@ def spark_session():
     yield spark
 
     spark.stop()
+
+@pytest.fixture(scope="function")
+def equal_column_structure():
+    """
+    Fixture to create a DataFrame with equal column structure.
+    """
+    return Compare.equal_structure

@@ -5,7 +5,8 @@ from .ColGenerator import ColGenerator
 
 class ColBasic(ColGenerator):
     """
-    Abstract base class for generating columns in a DataFrame.
+    This is the base class for generating columns in a DataFrame. Mainly for simple instantiations 
+    with no fancy logic of enforcing data types or metadata.
     """
     def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
         """
@@ -81,29 +82,3 @@ class ColBasic(ColGenerator):
         metadata (dict): Metadata for the column.
         """
         return super().set_metadata(metadata)
-
-    @property
-    def ColField(self) -> StructField:
-        """
-        Get the StructField for the column.
-
-        Returns:
-        StructField: The schema for the column.
-        """
-        return StructField(self.name, self.dataType, self.nullable, self.metadata)
-    
-    @ColField.setter
-    def ColField(self, value:StructField):
-        """
-        Set the StructField for the column.
-
-        Parameters:
-        value (StructField): The schema for the column.
-        """
-        if not isinstance(value, StructField):
-            raise ValueError("value must be a StructField")
-        self.name = value.name
-        self.dataType = value.dataType
-        self.nullable = value.nullable
-        self.metadata = value.metadata
-        

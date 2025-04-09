@@ -34,6 +34,13 @@ Unique Key Sets (aka foreign keys)
 Hash or Composite Keys
 - The column is a composite key using an algorithm such as MD5 to hash, or simple separator like "|" ex: "hello|world|!"
 
+For QC these can be the description of the tools use cases
+- Lighthouse (guiding data to safety)
+- Sieve (filtering out bad data)
+- Crucible (refining data)
+- Prism (showing the true colors of your data)
+- Curator (maintaining quality collections)
+
 --- 
 # Using Data Sets
 --- 
@@ -57,6 +64,15 @@ Hash or Composite Keys
 
 ```
 
+--- 
+# Data Sets Useds
+--- 
+### String Columns
+**First Names**
+- [Social Security Aggregations](https://www.ssa.gov/oact/babynames/limits.html)
+
+**Last Names/Surnames**
+- [Census Bureau Aggregations](https://www.census.gov/topics/population/genealogy/data/2010_surnames.html)
 
 
 --- 
