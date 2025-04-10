@@ -25,6 +25,10 @@ The data generators could all be staticmethods in a class?
 
 
 ## Ideas (higher effort):
+Global Spark Session
+- Do I need to make a class level spark session? for example, StringFirstName.py needs the first name data loaded for use.
+    - Maybe a singleton spark class, or a spark generator builder structure in the DataSet class?
+    - Or maybe the First Name data needs to be stored in memory or accessible in spark instance via table?
 Batching
 - Eventually if the data is of a certain size I will need to create data in batches.
 
@@ -56,7 +60,8 @@ For QC these can be the description of the tools use cases
 , "stats":{
     "unique": True, 
     "uniqueness_ratio": 1.0, # Value from 0.0 to 1.0 of roughly the percentage of unique values.
-    "cardinality_ratios": {"col1": "1:N", "col2": "1:1", "col3": "N:M"}
+    "cardinality_ratios": {"col1": "1:N", "col2": "1:1", "col3": "N:M"},
+    "null_ratio": .05 # how many null values are present in the column.
     "min": 1, 
     "max": None
     }
