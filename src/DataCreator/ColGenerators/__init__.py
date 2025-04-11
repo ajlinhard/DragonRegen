@@ -4,3 +4,4 @@ from .ColBasic import ColBasic
 from .StringBasic import StringBasic
 from .StringCategorical import StringCategorical
 from .StringFirstName import StringFirstName
+from .StringLastName import StringLastName
