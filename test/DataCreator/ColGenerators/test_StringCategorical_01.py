@@ -6,10 +6,10 @@ from DataGuardian.Column.Compare import Compare
 class TestStringCategorical01:
 
     @pytest.mark.parametrize("dataType, nullalbe, metadata, kwargs, expected", [
-        (StringType(), True, None, {'column_values': ['a', 'b', 'c']}, True),
-        (StringType(), True, None, {}, False),
-        (StringType(), False, {'column_values': ['a', 'b', 'c']}, {}, True),
-        (IntegerType(), True, None, {'column_values': ['a', 'b', 'c']}, False),
+        (StringType(), True, None, {'column_values': ['a', 'b', 'c']}, StringCategorical),
+        (StringType(), True, None, {}, None),
+        (StringType(), False, {'column_values': ['a', 'b', 'c']}, {}, StringCategorical),
+        (IntegerType(), True, None, {'column_values': ['a', 'b', 'c']}, None),
     ])
     def test_supports_requirements(self, dataType, nullalbe, metadata, kwargs, expected):
         # Test the requirements of StringCategorical

@@ -7,7 +7,7 @@ class ColGenerator(ABC):
     """
     Abstract base class for generating columns in a DataFrame.
     """
-    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
         """
         Initialize the column generator.
 
@@ -22,14 +22,17 @@ class ColGenerator(ABC):
 
     @classmethod
     @abstractmethod
-    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def create(cls, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
         subclasses = cls.__subclasses__()
         ls_deprioritize = ["ColBasic"]
         for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
-            print(f"Checking subclass: {subclass.__name__} and requirements: {subclass.supports_requirements(dataType, nullalbe, metadata)}")
-            if hasattr(subclass, 'supports_requirements') and subclass.supports_requirements(dataType, nullalbe, metadata):
-                return subclass(name, dataType, nullalbe, metadata, **kwargs)
+            if hasattr(subclass, 'supports_requirements') :
+                supported = subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs)
+                print(f"Checking subclass: {subclass.__name__} and requirements: {supported}")
+                if supported:
+                    return supported(name, dataType, nullalbe, metadata, **kwargs)
         raise ValueError(f"No suitable column generator found for {dataType} with nullable={nullalbe} and metadata={metadata}.")
+
 
     @classmethod
     def replicate(cls, o_field:StructField):
@@ -47,7 +50,7 @@ class ColGenerator(ABC):
 
     @classmethod
     @abstractmethod
-    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None) -> bool:
+    def supports_requirements(cls, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Check if the column generator supports the specified requirements.
 
@@ -59,7 +62,7 @@ class ColGenerator(ABC):
         Returns:
         bool: True if the requirements are supported, False otherwise.
         """
-        return False
+        return None
 
     @abstractmethod
     def generate_column(self, i_row_count: int) -> list:

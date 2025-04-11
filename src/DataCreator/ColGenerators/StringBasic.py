@@ -7,7 +7,7 @@ class StringBasic(ColGenerator):
     """
     Abstract base class for generating columns in a DataFrame.
     """
-    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
         """
         Initialize the column generator.
 
@@ -16,7 +16,7 @@ class StringBasic(ColGenerator):
         super().__init__(name, dataType, nullalbe, metadata)
 
     @classmethod
-    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def create(cls, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Create an instance of the column generator.
 
@@ -32,15 +32,20 @@ class StringBasic(ColGenerator):
         # Try to create the string if there are no metadata requirements
         if dataType in [StringType] and metadata is None and not kwargs:
             return cls(name, dataType, nullalbe, metadata)
+        # Check if any subclass supports the requirements
         subclasses = cls.__subclasses__()
-        for subclass in subclasses:
-            if hasattr(subclass, 'supports_requirements') and subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs):
-                return subclass(name, dataType, nullalbe, metadata, **kwargs)
+        ls_deprioritize = [] # Here for future mechanism to deprioritize certain classes
+        for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
+            if hasattr(subclass, 'supports_requirements') :
+                supported = subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs)
+                print(f"Checking subclass: {subclass.__name__} and requirements: {supported}")
+                if supported:
+                    return supported(name, dataType, nullalbe, metadata, **kwargs)
         # If no subclass supports the requirements, return the base class
         return cls(name, dataType, nullalbe, metadata)  
     
     @classmethod
-    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
+    def supports_requirements(cls, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Check if the column generator supports the specified requirements.
 
@@ -52,7 +57,19 @@ class StringBasic(ColGenerator):
         Returns:
         bool: True if the requirements are supported, False otherwise.
         """
-        return type(dataType) in [StringType] and metadata is None
+        if dataType != StringType:
+            print(f'Data Type: {dataType}')
+            return None
+        elif type(dataType) in [StringType] and metadata is None:
+            return cls
+        else:
+            subclasses = cls.__subclasses__()
+            for subclass in subclasses:
+                if hasattr(subclass, 'supports_requirements'):
+                    supported = subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs)
+                    if supported:
+                        return supported
+        return cls
 
     @classmethod
     def replicate(cls, o_field:StructField):

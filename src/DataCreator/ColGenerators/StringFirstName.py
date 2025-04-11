@@ -9,7 +9,7 @@ class StringFirstName(StringBasic):
     """
     Generate a column of first names.
     """
-    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
         """
         Initialize the column generator.
 
@@ -22,13 +22,12 @@ class StringFirstName(StringBasic):
         super().__init__(name, dataType, nullalbe, metadata)
 
     @classmethod
-    def supports_requirements(cls, dataType = StringType(), nullalbe = True, metadata = None):
-        b_result = False
+    def supports_requirements(cls, dataType = StringType, nullalbe = True, metadata = None, **kwargs):
         if metadata is None:
-            return False
+            return None
         if metadata.get("ColType") == "FirstName":
-            b_result = True
-        return b_result
+            return cls
+        return None
     
     def generate_column(self, i_row_count):
         """
