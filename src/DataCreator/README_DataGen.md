@@ -3,6 +3,14 @@ The project is about creating a data generator in pyspark which can be used to c
 
 
 ## Nexts Steps:
+
+1) move all test of ipynbs into the testing modules and then delete
+2) Work on the FirstName and LastName detectors. Look at Microsoft token detector for more
+3) Load a name files into SQL Spark and then reference it in a follow-up query.
+4) Add in overall column nullability idea
+5) System-wide spark instance for easier appending, relationships and collaboration
+6) Think through multi-column relationships? How will the talk (maybe via a builder class?)
+
 - Abstract Read and Write (based of repository concept)
 - Work on other column generators like catergorical, UID, First/Last name
 - Create pytesting and package

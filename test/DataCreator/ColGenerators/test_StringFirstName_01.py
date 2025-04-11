@@ -8,7 +8,7 @@ class TestStringFirstName():
 
     @pytest.fixture(scope="class")
     def s_test_parquet_path(self):
-         return r"F:\Spark_Data_Test\census_firstname_bounds.parquet"
+         return r"F:\Spark_Data_Test\SSA_FirstNames_Stats"
 
     @pytest.fixture(scope="class")
     @pytest.mark.usefixtures("spark_session", "s_test_parquet_path")

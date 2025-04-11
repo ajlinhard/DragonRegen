@@ -7,8 +7,9 @@ class TestFirstNameData01():
     def s_test_parquet_path(self):
          return r"F:\Spark_Data_Test\census_firstname_bounds.parquet"
 
-    @pytest.mark.usefixtures("spark_session","s_test_parquet_path")
-    def test_Initialization(self, spark_session, s_test_parquet_path):
+    @pytest.mark.usefixtures("spark_session","s_test_parquet_path", "cleanup_singleton")
+    def test_Initialization(self, spark_session, s_test_parquet_path, cleanup_singleton):
+        cleanup_singleton(FirstNameData)
         first_name_data = FirstNameData(spark=spark_session, s_file_path=s_test_parquet_path)
         assert first_name_data is not None, "FirstNameData instance should not be None"
         assert first_name_data.df_first_names is not None, "DataFrame should not be None"

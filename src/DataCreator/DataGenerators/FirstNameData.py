@@ -15,7 +15,7 @@ class FirstNameData(metaclass=FromDataSingleton):
             s_file_path (str, optional): Path to the file containing first names. Defaults to None.
         """
         self.spark = spark
-        self.s_file_path = s_file_path if s_file_path else r"F:\Spark_Data_Test\census_firstname_bounds.parquet"
+        self.s_file_path = s_file_path if s_file_path else r"F:\Spark_Data_Test\SSA_FirstNames_Stats"
         self.options = options if options else {}
         self.df_first_names = None
         self.load_first_names()

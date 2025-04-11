@@ -13,3 +13,12 @@ class FromDataSingleton(type):
             # Create and store the instance if it doesn't exist, using the type __call__ method.
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
+
+    @staticmethod
+    def cleanup(cls):
+        """
+        Cleanup method to remove the singleton instance.
+        This is useful for testing purposes to ensure a fresh instance can be created.
+        """
+        if cls in cls._instances:
+            del cls._instances[cls]
