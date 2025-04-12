@@ -45,7 +45,7 @@ class ColBasic(ColGenerator):
         Returns:
         bool: True if the requirements are supported, False otherwise.
         """
-        if type(dataType) in [StringType, IntegerType, FloatType, DoubleType, BooleanType, DateType, TimestampNTZType] and metadata is None:
+        if type(dataType) in [StringType, IntegerType, FloatType, DoubleType, BooleanType, DateType, TimestampNTZType]:
             return cls
         return None
 

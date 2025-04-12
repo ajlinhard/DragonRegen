@@ -25,6 +25,7 @@ class ColGenerator(ABC):
     def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         subclasses = cls.__subclasses__()
         ls_deprioritize = ["ColBasic"]
+        print(f"==> Column Name:{name}")
         for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
             if hasattr(subclass, 'supports_requirements') :
                 supported = subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs)
