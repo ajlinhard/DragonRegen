@@ -35,6 +35,11 @@ class PyData(BasicData):
         return [random.uniform(min_value, max_value) for _ in range(length)]
     
     @staticmethod
+    def random_booleans(length:int):
+        # Generate a list of random booleans
+        return [random.choice([True, False]) for _ in range(length)]
+    
+    @staticmethod
     def random_dates(length:int, start_date, end_date, granualarity:str='second'):
         # Generate a list of random dates
         start = datetime.strptime(start_date, '%Y-%m-%d') if type(start_date)== str else start_date

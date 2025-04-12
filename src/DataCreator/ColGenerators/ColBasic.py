@@ -8,7 +8,7 @@ class ColBasic(ColGenerator):
     This is the base class for generating columns in a DataFrame. Mainly for simple instantiations 
     with no fancy logic of enforcing data types or metadata.
     """
-    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Initialize the column generator.
 
@@ -17,7 +17,7 @@ class ColBasic(ColGenerator):
         super().__init__(name, dataType, nullalbe, metadata)
 
     @classmethod
-    def create(cls, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
+    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Create an instance of the column generator.
 
@@ -33,7 +33,7 @@ class ColBasic(ColGenerator):
         return cls(name, dataType, nullalbe, metadata)
     
     @classmethod
-    def supports_requirements(cls, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
+    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Check if the column generator supports the specified requirements.
 
@@ -45,7 +45,7 @@ class ColBasic(ColGenerator):
         Returns:
         bool: True if the requirements are supported, False otherwise.
         """
-        if type(dataType) in [StringType, IntegerType, FloatType, DoubleType, BooleanType, DateType] and metadata is None:
+        if type(dataType) in [StringType, IntegerType, FloatType, DoubleType, BooleanType, DateType, TimestampNTZType] and metadata is None:
             return cls
         return None
 

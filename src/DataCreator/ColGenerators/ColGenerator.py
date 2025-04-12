@@ -7,7 +7,7 @@ class ColGenerator(ABC):
     """
     Abstract base class for generating columns in a DataFrame.
     """
-    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
         """
         Initialize the column generator.
 
@@ -22,7 +22,7 @@ class ColGenerator(ABC):
 
     @classmethod
     @abstractmethod
-    def create(cls, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         subclasses = cls.__subclasses__()
         ls_deprioritize = ["ColBasic"]
         for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
@@ -50,7 +50,7 @@ class ColGenerator(ABC):
 
     @classmethod
     @abstractmethod
-    def supports_requirements(cls, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Check if the column generator supports the specified requirements.
 
@@ -80,12 +80,15 @@ class ColGenerator(ABC):
             return PyData.random_strings(i_row_count, 1, 20)
         elif isinstance(self.dataType, IntegerType):
             return PyData.random_ints(i_row_count, 1, 100)
-        elif isinstance(self.dataType, FloatType):
+        elif isinstance(self.dataType, (FloatType, DoubleType)):
             return PyData.random_floats(i_row_count, 1.0, 100.0)
+        elif isinstance(self.dataType, BooleanType):
+            return PyData.random_booleans(i_row_count)
         elif isinstance(self.dataType, DateType):
             return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day")
         elif isinstance(self.dataType, TimestampNTZType):
             return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second")
+        raise ValueError(f"Unsupported data type: {self.dataType}")
 
     @abstractmethod
     def set_metadata(self, metadata:dict):

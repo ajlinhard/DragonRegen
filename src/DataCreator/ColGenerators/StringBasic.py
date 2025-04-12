@@ -7,7 +7,7 @@ class StringBasic(ColGenerator):
     """
     Abstract base class for generating columns in a DataFrame.
     """
-    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
         """
         Initialize the column generator.
 
@@ -16,7 +16,7 @@ class StringBasic(ColGenerator):
         super().__init__(name, dataType, nullalbe, metadata)
 
     @classmethod
-    def create(cls, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Create an instance of the column generator.
 
@@ -30,7 +30,7 @@ class StringBasic(ColGenerator):
         ColGenerator: An instance of the column generator.
         """
         # Try to create the string if there are no metadata requirements
-        if dataType in [StringType] and metadata is None and not kwargs:
+        if type(dataType) in [StringType] and metadata is None and not kwargs:
             return cls(name, dataType, nullalbe, metadata)
         # Check if any subclass supports the requirements
         subclasses = cls.__subclasses__()
@@ -57,7 +57,7 @@ class StringBasic(ColGenerator):
         Returns:
         bool: True if the requirements are supported, False otherwise.
         """
-        if dataType != StringType:
+        if type(dataType) != StringType:
             print(f'Data Type: {dataType}')
             return None
         elif type(dataType) in [StringType] and metadata is None:

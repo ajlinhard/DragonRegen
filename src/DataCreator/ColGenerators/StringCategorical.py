@@ -8,7 +8,7 @@ class StringCategorical(StringBasic):
     A base class for generating categorical string columns.
     Inherits from StringBasic and adds functionality for categorical columns.
     """
-    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, column_values:list=None):
+    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, column_values:list=None):
         """
         Initialize the column generator.
 
@@ -20,7 +20,7 @@ class StringCategorical(StringBasic):
             raise ValueError("For Categorical columns the column_values must be provided in metadata or as an argument column_values")
 
     @classmethod
-    def create(cls, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Create an instance of the column generator.
 
@@ -37,7 +37,7 @@ class StringCategorical(StringBasic):
         return cls(name, dataType, nullalbe, metadata, **kwargs)
     
     @classmethod
-    def supports_requirements(cls, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None, **kwargs):
+    def supports_requirements(cls, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         """
         Check if the column generator supports the specified requirements.
 

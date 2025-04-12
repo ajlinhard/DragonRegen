@@ -9,7 +9,7 @@ class StringLastName(StringBasic):
     """
     Generate a column of first names.
     """
-    def __init__(self, name:str, dataType:DataType=StringType, nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
         """
         Initialize the column generator.
 
@@ -22,8 +22,8 @@ class StringLastName(StringBasic):
         super().__init__(name, dataType, nullalbe, metadata)
 
     @classmethod
-    def supports_requirements(cls, dataType = StringType, nullalbe = True, metadata = None, **kwargs):
-        if metadata is None:
+    def supports_requirements(cls, dataType = StringType(), nullalbe = True, metadata = None, **kwargs):
+        if metadata is None or type(StringType()) != StringType:
             return None
         if metadata.get("ColType") == "LastName":
             return cls

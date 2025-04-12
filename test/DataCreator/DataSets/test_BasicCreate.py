@@ -21,7 +21,7 @@ class TestBasicCreate():
         assert df.columns == ["id", "name", "age", "city"]
 
     @pytest.mark.usefixtures("spark_session")
-    def test_base_datat_types(self, spark_session):
+    def test_base_data_types(self, spark_session):
         # Create a DataSetGenStandard object
         test_count = 1755
         testSchema = StructType([
