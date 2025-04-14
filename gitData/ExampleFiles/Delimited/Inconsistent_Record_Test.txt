@@ -1,0 +1,11 @@
+id,name,age,city,state
+1,John Smith,34,New York,NY
+2,Maria Garcia,28,Los Angeles,CA
+3,Robert Johnson,42,Chicago,IL
+4,Lisa Wong,31,Houston,TX
+5,James Brown,39,Phoenix,AZ
+6,Sarah Miller,26,Philadelphia
+7,Michael Davis,45,San Antonio,TX,Finance
+8,Jennifer Wilson,33
+9,David Martinez,37,San Diego,CA,Engineering,Senior
+10,Michelle Thompson,29,Dallas,TX
