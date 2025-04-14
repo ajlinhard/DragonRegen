@@ -51,7 +51,7 @@ class StringFirstName(StringBasic):
                                               , on= (df_names_int.name_int > df_first_names.profile_lower_bound) & (df_names_int.name_int <= df_first_names.profile_upper_bound)
                                               , how='left') \
                                               .select(df_first_names.first_name.alias(self.name)) # rename column to user input self.name
-        return df_new_name_str
+        return df_new_name_str.agg(collect_list("first_name").alias("list_column")).collect()[0]["list_column"]
         
         
 
