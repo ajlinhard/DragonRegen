@@ -10,6 +10,7 @@ def spark_session():
     """
     spark = SparkSession.builder \
         .appName("TestSession") \
+        .enableHiveSupport() \
         .master("local[*]") \
         .getOrCreate()
 

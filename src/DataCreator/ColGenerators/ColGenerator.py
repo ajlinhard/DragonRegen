@@ -7,7 +7,7 @@ class ColGenerator(ABC):
     """
     Abstract base class for generating columns in a DataFrame.
     """
-    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None):
+    def __init__(self, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict={}):
         """
         Initialize the column generator.
 
@@ -18,15 +18,17 @@ class ColGenerator(ABC):
         self.name = name
         self.dataType = dataType
         self.nullable = nullalbe
-        self.metadata = metadata
+        self.metadata = metadata if metadata else {}
 
     @classmethod
     @abstractmethod
     def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
         subclasses = cls.__subclasses__()
         ls_deprioritize = ["ColBasic"]
+        ds_deprioritzie = {"ColBasic": 999, "StringBasic":10}
         print(f"==> Column Name:{name}")
-        for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
+        # for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
+        for subclass in sorted(subclasses, key=lambda x: 0 if x.__name__ not in ds_deprioritzie.keys() else ds_deprioritzie[x.__name__]):
             if hasattr(subclass, 'supports_requirements') :
                 supported = subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs)
                 print(f"Checking subclass: {subclass.__name__} and requirements: {supported}")
@@ -77,18 +79,19 @@ class ColGenerator(ABC):
         Returns:
         list: Generated column data.
         """
+        null_ratio = self.metadata.get('stats',{}).get('null_ratio', 0.0)
         if isinstance(self.dataType, StringType):
-            return PyData.random_strings(i_row_count, 1, 20)
+            return PyData.random_strings(i_row_count, 1, 20, None, null_ratio)
         elif isinstance(self.dataType, IntegerType):
-            return PyData.random_ints(i_row_count, 1, 100)
+            return PyData.random_ints(i_row_count, 1, 100, null_ratio)
         elif isinstance(self.dataType, (FloatType, DoubleType)):
-            return PyData.random_floats(i_row_count, 1.0, 100.0)
+            return PyData.random_floats(i_row_count, 1.0, 100.0, null_ratio)
         elif isinstance(self.dataType, BooleanType):
-            return PyData.random_booleans(i_row_count)
+            return PyData.random_booleans(i_row_count, null_ratio)
         elif isinstance(self.dataType, DateType):
-            return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day")
+            return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day", null_ratio=null_ratio)
         elif isinstance(self.dataType, TimestampNTZType):
-            return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second")
+            return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second", null_ratio=null_ratio)
         raise ValueError(f"Unsupported data type: {self.dataType}")
 
     @abstractmethod

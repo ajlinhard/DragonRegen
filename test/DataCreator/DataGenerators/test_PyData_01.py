@@ -5,6 +5,17 @@ from DataCreator.DataGenerators.PyData import PyData
 
 class TestPyData:
 
+    def test_null_ratio_list():
+        # test that null ratio is correct within 10% buffer
+        length = 1000
+        null_ratio = 0.2
+        ls_null = PyData.null_ratio_list(length, null_ratio)
+        i_null_cnt = 0
+        for b_null in ls_null:
+            i_null_cnt += 1 if b_null else 0
+        i_expected = length * null_ratio
+        assert i_expected * 0.9 <= i_null_cnt <= i_expected * 1.1
+    
     @pytest.mark.parametrize('length, min_length, max_length, charset', [
         (5, 1, 10, 'abcdefghijklmnopqrstuvwxyz'),
         (8, 5, 15, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),

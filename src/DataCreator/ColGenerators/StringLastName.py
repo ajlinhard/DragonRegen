@@ -36,12 +36,13 @@ class StringLastName(StringBasic):
         Args:
             name_indexes (list or DataFrame): List of indexes to select first names from the DataFrame.
         """
+        null_ratio = self.metadata.get('stats',{}).get('null_ratio', 0.0)
         data_last_name = LastNameData()
         spark = data_last_name.spark
         df_last_names = data_last_name.df_last_names
         #TODO: maybe move the DataFrame create out to SparkData class
         # Generate random indexes for first names
-        li_name_lkp = PyData.random_ints(i_row_count, 1, data_last_name.profile_max)
+        li_name_lkp = PyData.random_ints(i_row_count, 1, data_last_name.profile_max, null_ratio)
         # Create a DataFrame with the random indexes
         schema = StructType([StructField('name_int', IntegerType(), False)])
         df_names_int = spark.createDataFrame(zip(li_name_lkp), schema)

@@ -1,6 +1,8 @@
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from .FromDataSingleton import FromDataSingleton
+from ..ConfigSys import ConfigSys
 
 class LastNameData(metaclass=FromDataSingleton):
     """Singleton class for last name data.
@@ -15,7 +17,7 @@ class LastNameData(metaclass=FromDataSingleton):
             s_file_path (str, optional): Path to the file containing last names. Defaults to None.
         """
         self.spark = spark
-        self.s_file_path = s_file_path if s_file_path else r"F:\Spark_Data_Test\census_surname_bounds.parquet"
+        self.s_file_path = s_file_path if s_file_path else os.path.abspath(os.path.join(ConfigSys().data_path(),"census_surname_bounds.parquet"))
         self.options = options if options else {}
         self.df_last_names = None
         self.load_last_names()
@@ -24,7 +26,7 @@ class LastNameData(metaclass=FromDataSingleton):
         """
         Load the last names from the passed file into a DataFrame for use by other generators.
         """
-        self.df_last_names = self.spark.read.parquet(self.s_file_path)
+        self.df_last_names = self.spark.read.parquet(self.s_file_path+r'\*.parquet')
         # confirm columns are present
         if 'last_name' not in self.df_last_names.columns:
             raise ValueError("Column 'last_name' not found in the DataFrame.")

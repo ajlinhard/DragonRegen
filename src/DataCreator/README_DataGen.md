@@ -4,11 +4,14 @@ The project is about creating a data generator in pyspark which can be used to c
 
 ## Nexts Steps:
 
-2) Work on the FirstName and LastName detectors. Look at Microsoft token detector for more
+2) Work on the FirstName and LastName detectors. 
 3) Load a name files into SQL Spark and then reference it in a follow-up query.
-4) Add in overall column nullability idea
+4) Add logging, trace, and speed tracking
 5) System-wide spark instance for easier appending, relationships and collaboration
 6) Think through multi-column relationships? How will the talk (maybe via a builder class?)
+7) Look at Microsoft token detector (Presidio) for more
+8) Routing Data Table Concepts (backend mysql or postgreSQL db)
+9) Profile Categorical (column_values, column_value_ratio)
 
 - Abstract Read and Write (based of repository concept)
 - Work on other column generators like catergorical, UID, First/Last name

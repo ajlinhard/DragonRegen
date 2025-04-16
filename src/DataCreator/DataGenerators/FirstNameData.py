@@ -1,6 +1,8 @@
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from .FromDataSingleton import FromDataSingleton
+from ..ConfigSys import ConfigSys
 
 class FirstNameData(metaclass=FromDataSingleton):
     """Singleton class for first name data.
@@ -15,7 +17,7 @@ class FirstNameData(metaclass=FromDataSingleton):
             s_file_path (str, optional): Path to the file containing first names. Defaults to None.
         """
         self.spark = spark
-        self.s_file_path = s_file_path if s_file_path else r"F:\Spark_Data_Test\SSA_FirstNames_Stats"
+        self.s_file_path = s_file_path if s_file_path else os.path.abspath(os.path.join(ConfigSys().data_path(),"SSA_FirstNames_Stats"))
         self.options = options if options else {}
         self.df_first_names = None
         self.load_first_names()
@@ -24,7 +26,7 @@ class FirstNameData(metaclass=FromDataSingleton):
         """
         Load the first names from the passed file into a DataFrame for use by other generators.
         """
-        self.df_first_names = self.spark.read.parquet(self.s_file_path)
+        self.df_first_names = self.spark.read.parquet(self.s_file_path+r'/*.parquet')
         # confirm columns are present
         if 'first_name' not in self.df_first_names.columns:
             raise ValueError("Column 'first_name' not found in the DataFrame.")
