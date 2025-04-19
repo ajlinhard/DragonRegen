@@ -3,7 +3,9 @@ The project is about creating a data generator in pyspark which can be used to c
 
 
 ## Nexts Steps:
-
+0) teirs to the medillion reading a airflow prediction
+1) Builder structure for generating the data
+    a. implement numpy data
 2) Work on the FirstName and LastName detectors. 
 3) Load a name files into SQL Spark and then reference it in a follow-up query.
 4) Add logging, trace, and speed tracking
