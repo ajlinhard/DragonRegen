@@ -58,7 +58,6 @@ class StringBasic(ColGenerator):
         bool: True if the requirements are supported, False otherwise.
         """
         if type(dataType) != StringType:
-            print(f'Data Type: {dataType}')
             return None
         elif type(dataType) in [StringType] and metadata is None:
             return cls

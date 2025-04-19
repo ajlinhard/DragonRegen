@@ -78,6 +78,13 @@ class Categorical(ColGenerator):
             return None
         metadata = {} if not metadata else metadata
         if ('column_values' in metadata.keys() or 'column_values' in kwargs.keys()):
+            # TODO add this as teh abstract classes code the call super() via self. or cls.
+            subclasses = cls.__subclasses__()
+            for subclass in subclasses:
+                if hasattr(subclass, 'supports_requirements'):
+                    supported = subclass.supports_requirements(dataType, nullalbe, metadata, **kwargs)
+                    if supported:
+                        return supported
             return cls
         print('Nothing found')
         return None
