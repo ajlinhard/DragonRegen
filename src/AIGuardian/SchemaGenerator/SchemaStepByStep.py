@@ -26,10 +26,10 @@ class SchemaStepByStep:
         Generate a list of tables based on the user request.
         """
         # Alter input to try to format the response:
-        engineering_prompt = """Please take the following <business_requirments> and create the table list and schema for the the request.
-        <business_requirments>
+        engineering_prompt = """Please take the following <business_requirements> and create the table list and schema for the the request.
+        <business_requirements>
         {{prompt}}
-        </business_requirments>
+        </business_requirements>
         Please provide the response in a JSON format like the <JSON_Template> below:
         <JSON_Template>
         {"table_name_1": {
@@ -58,8 +58,57 @@ class SchemaStepByStep:
             temperature=0.0,
             system=self.ai_system_prompt,
             messages=[
-            {"role": "user", "content": altered_prompt}
-            ]
+            {"role": "user", "content": altered_prompt},
+            {"role": "assistant", "content": "{"}
+            ],
+            stop_sequences=["}"]
+        )
+        # TODO add json validation and error handling, plus logging in SQLAlchemy to track inputs and responses.
+        # TODO attempt start and stop tokens to guarantee the response is valid JSON.
+        # TODO add a retry mechanism to try to get a valid JSON response.
+        return message.content[0].text
+    
+    def generate_table_list_w_dtypes(self):
+        """
+        Generate a list of tables based on the user request.
+        """
+        # Alter input to try to format the response:
+        engineering_prompt = """Please take the following <business_requirements> and create the table list and schema for the the request.
+        <business_requirements>
+        {{prompt}}
+        </business_requirements>
+        Please provide the response in a JSON format like the <JSON_Template> below:
+        <JSON_Template>
+        {"table_name_1": {
+            "purpose": "short description of tables usage in the architecture",
+            "columns":{"name":"column_name_1", "dataType":"Integer", "nullable":False, "metadata":"unique ID, short description of column",
+            , "name":"column_name_2", "dataType":"String", "nullable":True, "metadata": "short description of column"
+            , "name":"column_name_3", "dataType":"String", "nullable":False, "metadata": "short description of column"
+            }},
+        "table_name_2": {
+            "purpose": "short description of tables usage in the architecture",
+            "columns":
+            {"name":"column_name_1", "dataType":"Integer", "nullable":False, "metadata": "unique ID, short description of column",
+            , "name":"column_name_2", "dataType":"String", "nullable":True, "metadata":"short description of column"
+            , "name":"column_name_3", "dataType":"Float", "nullable":True, "metadata": "short description of column"
+            , "name":"column_name_4", "dataType":"Timestampe", "nullable":False, "metadata": "example: insert datetime column"
+            }}
+        }
+        </JSON_Template>
+        """
+        # Alter the prompt to include the JSON template:
+        altered_prompt = engineering_prompt.replace("{{prompt}}",self.prompt)
+        # Send the prompt to the AI client:
+        message = self.ai_client.messages.create(
+            model=self.model,
+            max_tokens=2000,
+            temperature=0.0,
+            system=self.ai_system_prompt,
+            messages=[
+            {"role": "user", "content": altered_prompt},
+            {"role": "assistant", "content": "{"}
+            ],
+            stop_sequences=["}"]
         )
         # TODO add json validation and error handling, plus logging in SQLAlchemy to track inputs and responses.
         # TODO attempt start and stop tokens to guarantee the response is valid JSON.
@@ -97,7 +146,8 @@ class SchemaStepByStep:
             })
         return self.schema
     
-    def create_spark_schema(self):
+    @staticmethod
+    def create_spark_schema(d_schema):
         """
         Create a Spark schema based on the generated schema.
         """
