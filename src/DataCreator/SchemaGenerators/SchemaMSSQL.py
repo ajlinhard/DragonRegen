@@ -19,19 +19,17 @@ class SchemaMSSQL(SchemaGenerator):
         """
         This method will generate the dynamic SQL from the JSON schema.
         """
-        """
-        This method will generate the dynamic SQL from the JSON schema.
-        """
         # Generate CREATE TABLE statements for each table
+        d_json = dict(d_json)
         table_schema = {}
         for table_name, table_info in d_json.items():
             columns = []
             primary_key = None
             
             # Process each column
-            for column in table_info["columns"]:
+            for column in table_info.get("fields", table_info.get("columns", [])):
                 column_name = column["name"]
-                data_type = SchemaGenerator.validate_dataType(column["dataType"])
+                data_type = SchemaMSSQL.validate_dataType(column.get("type", column.get("dataType")))
                 nullable = "NULL" if column.get("nullable", True) else "NOT NULL"
                 
                 # Check if this column is likely a primary key
@@ -61,6 +59,56 @@ class SchemaMSSQL(SchemaGenerator):
         "Timestamp": "DATETIME2",
         "Boolean": "BIT",
         "JSON": "NVARCHAR(MAX)"
+        }
+         
+         spark_to_mssql_type_mapping = {
+            # Numeric types
+            "ByteType": "TINYINT",
+            "ShortType": "SMALLINT",
+            "IntegerType": "INT",
+            "LongType": "BIGINT",
+            "FloatType": "REAL",
+            "DoubleType": "FLOAT",
+            "DecimalType": "DECIMAL",
+            
+            # String types
+            "StringType": "NVARCHAR(255)",
+            "VarcharType": "VARCHAR",
+            "CharType": "CHAR",
+            
+            # Binary types
+            "BinaryType": "VARBINARY(MAX)",
+            
+            # Boolean type
+            "BooleanType": "BIT",
+            
+            # Datetime types
+            "TimestampType": "DATETIME2",
+            "DateType": "DATE",
+            
+            # Complex types
+            "ArrayType": "NVARCHAR(MAX)",
+            "MapType": "NVARCHAR(MAX)",
+            "StructType": "NVARCHAR(MAX)",
+            
+            # Others
+            "NullType": "NVARCHAR(MAX)",
+            "JSON": "NVARCHAR(MAX)",
+            "Interval": "NVARCHAR(MAX)",
+            
+            # Extended types (not native Spark but commonly used)
+            "GUID": "UNIQUEIDENTIFIER",
+            "SmallDateTime": "SMALLDATETIME",
+            "Money": "MONEY",
+            "SmallMoney": "SMALLMONEY",
+            "Text": "TEXT",
+            "NText": "NTEXT",
+            "Image": "IMAGE",
+            "XML": "XML",
+            "TimeType": "TIME",
+            "Geography": "GEOGRAPHY",
+            "Geometry": "GEOMETRY",
+            "HierarchyID": "HIERARCHYID"
         }
          if data_type not in valid_data_types.keys():
             raise ValueError(f"Invalid data type: {data_type}. Valid data types are: {', '.join(valid_data_types.keys())}")

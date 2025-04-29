@@ -16,21 +16,21 @@ class SchemaGenerator(ABC):
         https://spark.apache.org/docs/3.5.5/api/python/reference/pyspark.sql/api/pyspark.sql.types.StructType.html#pyspark.sql.types.StructType.fromJson
         """
         table_schema = {}
-        for table_name in d_json.keys():
-            columns = d_json[table_name]["columns"]
-            if type(columns) is not list:
-                raise ValueError(f"Columns for table key: {table_name} should be a list, but was {type(columns)}")
+        for table_name, table_info in d_json.items():
             spark_columns = []
+            columns = table_info.get("fields", table_info.get("columns", []))
             for column in columns:
                 # schema = StructType.fromJson(schema)
+                column = dict(column)
                 if type(column) is not dict:
                     raise ValueError(f"Column for table key: {table_name} should be a dict, but was {type(column)}")
-                if "name" not in column.keys() or "dataType" not in column.keys():
-                    raise ValueError(f"Column for table key: {table_name} should have 'name' and 'dataType' keys, but was {column}")
-                column["dataType"] = SchemaGenerator.validate_dataType(column["dataType"])
+                if "name" not in column.keys() or "type" not in column.keys():
+                    raise ValueError(f"Column for table key: {table_name} should have 'name' and 'type' keys, but was {column}")
+                column["dataType"] = SchemaGenerator.validate_dataType(column.pop("type"))
+                if 'metadata' in column.keys():
+                    column['metadata'] = {"description": column.pop("metadata", "")} if type(column['metadata']) is str else column['metadata']
                 spark_columns.append(StructField(**column))
-            spark_columns = StructType(spark_columns)
-            table_schema = {table_name: spark_columns}
+            table_schema = {table_name: StructType(spark_columns)}
         return table_schema
     
     @staticmethod
@@ -40,14 +40,16 @@ class SchemaGenerator(ABC):
         This method will generate the dynamic SQL from the JSON schema.
         """
         # Generate CREATE TABLE statements for each table
+        table_schema = {}
         for table_name, table_info in d_json.items():
             columns = []
             primary_key = None
             
+            columns_json = table_info.get("fields", table_info.get("columns", []))
             # Process each column
-            for column in table_info["columns"]:
+            for column in columns_json:
                 column_name = column["name"]
-                data_type = SchemaGenerator.validate_dataType(column["dataType"])
+                data_type = SchemaGenerator.validate_dataType(column["type"])
                 nullable = "NULL" if column.get("nullable", True) else "NOT NULL"
                 
                 # Check if this column is likely a primary key
@@ -62,6 +64,8 @@ class SchemaGenerator(ABC):
             
             # Combine all column definitions
             columns_str = ",\n".join(columns)
+            table_schema[table_name] = columns_str
+        return table_schema
         
     @staticmethod
     @abstractmethod
@@ -70,12 +74,28 @@ class SchemaGenerator(ABC):
         Validate the data type of a column.
         """
         valid_data_types = {
-        "Integer": "INT",
-        "String": "NVARCHAR(255)",
-        "Float": "FLOAT",
-        "Timestamp": "DATETIME2",
-        "Boolean": "BIT",
-        "JSON": "NVARCHAR(MAX)"
+            "Boolean": BooleanType(),
+            "Byte": ByteType(),
+            "Short": ShortType(),
+            "Integer": IntegerType(),
+            "Long": LongType(),
+            "Float": FloatType(),
+            "Double": DoubleType(),
+            "String": StringType(),
+            "JSON": StringType(),
+            "Binary": BinaryType(),
+            "Date": DateType(),
+            "Timestamp": TimestampType(),
+            # "Array": ArrayType(elementType),
+            # "Map": MapType(keyType, valueType, valueContainsNull),
+            # "Struct": StructType(fields),
+            # "StructField": StructField(name, dataType, nullable),
+            # "Decimal": DecimalType(precision, scale),
+            "Null": NullType(),
+            # "CalendarInterval": CalendarIntervalType(),
+            "YearMonthInterval": YearMonthIntervalType(),
+            "DayTimeInterval": DayTimeIntervalType(),
+            # "UserDefined": UserDefinedType(userClass)
         }
         if data_type not in valid_data_types.keys():
             raise ValueError(f"Invalid data type: {data_type}. Valid data types are: {', '.join(valid_data_types.keys())}")

@@ -81,7 +81,7 @@ class SchemaStepByStep:
         <JSON_Template>
         {"table_name_1": {
             "purpose": "short description of tables usage in the architecture",
-            "columns":{"name":"column_name_1", "dataType":"Integer", "nullable":False, "metadata":"unique ID, short description of column",
+            "columns":{"name":"column_name_1", "dataType":"Integer", "nullable":False, "metadata":"unique ID, short description of column"},
             , "name":"column_name_2", "dataType":"String", "nullable":True, "metadata": "short description of column"
             , "name":"column_name_3", "dataType":"String", "nullable":False, "metadata": "short description of column"
             }},
@@ -93,6 +93,59 @@ class SchemaStepByStep:
             , "name":"column_name_3", "dataType":"Float", "nullable":True, "metadata": "short description of column"
             , "name":"column_name_4", "dataType":"Timestampe", "nullable":False, "metadata": "example: insert datetime column"
             }}
+        }
+        </JSON_Template>
+        """
+        # Alter the prompt to include the JSON template:
+        altered_prompt = engineering_prompt.replace("{{prompt}}",self.prompt)
+        # Send the prompt to the AI client:
+        message = self.ai_client.messages.create(
+            model=self.model,
+            max_tokens=2000,
+            temperature=0.0,
+            system=self.ai_system_prompt,
+            messages=[
+            {"role": "user", "content": altered_prompt},
+            {"role": "assistant", "content": "{"}
+            ],
+            stop_sequences=["}"]
+        )
+        # TODO add json validation and error handling, plus logging in SQLAlchemy to track inputs and responses.
+        # TODO attempt start and stop tokens to guarantee the response is valid JSON.
+        # TODO add a retry mechanism to try to get a valid JSON response.
+        return message.content[0].text
+    
+    def generate_table_list_spark_w_dtypes(self):
+        """
+        Generate a list of tables based on the user request.
+        """
+        # Alter input to try to format the response:
+        engineering_prompt = """Please take the following <business_requirements> and create the table list and schema for the the request.
+        <business_requirements>
+        {{prompt}}
+        </business_requirements>
+        Please provide the response in a JSON format like the <JSON_Template> below:
+        <JSON_Template>
+        {"table_name_1": {
+            "purpose": "short description of tables usage in the architecture",
+            "fields": [
+                {"name":"column_name_1", "type":"Integer", "nullable":False, "metadata":{"description":"unique ID, short description of column"}},
+                {"name":"column_name_2", "type":"String", "nullable":True, "metadata": {"description":"short description of column"}}, 
+                {"name":"column_name_3", "type":"String", "nullable":False, "metadata": {"description":"short description of column"}}
+            ],
+            "type":"struct"
+        },
+        "table_name_2": {
+            "purpose": "short description of tables usage in the architecture",
+            "fields": [
+                {"name":"column_name_1", "type":"Integer", "nullable":False, "metadata": {"description":"unique ID, short description of column"}},
+                {"name":"column_name_2", "type":"String", "nullable":True, "metadata":{"description":"short description of column"}},
+                {"name":"column_name_3", "type":"Float", "nullable":True, "metadata": {"description":"short description of column"}},
+                {"name":"column_name_4", "type":"Timestamp", "nullable":False, "metadata": {"description":"example: insert datetime column"}}
+                {"name":"column_name_5", "type":"arrary", "nullable":True, "metadata": {"description":"short description of column"}},
+            ],
+            "type":"struct"
+        }
         }
         </JSON_Template>
         """
@@ -146,29 +199,3 @@ class SchemaStepByStep:
             })
         return self.schema
     
-    @staticmethod
-    def create_spark_schema(d_schema):
-        """
-        Create a Spark schema based on the generated schema.
-        """
-        spark_schema = []
-        for table in self.schema["tables"]:
-            table_name = table["table_name"]
-            columns = table["columns"]
-            spark_columns = []
-            for column in columns:
-                column_name = column["name"]
-                data_type = column["dataType"]
-                nullable = column["nullable"]
-                metadata = column.get("metadata", {})
-                spark_columns.append({
-                    "name": column_name,
-                    "dataType": data_type,
-                    "nullable": nullable,
-                    "metadata": metadata
-                })
-            spark_schema.append({
-                "table_name": table_name,
-                "columns": spark_columns
-            })
-        return spark_schema
