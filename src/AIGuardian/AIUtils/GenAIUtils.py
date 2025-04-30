@@ -26,7 +26,17 @@ class GenAIUtils():
                 json.loads(json_response)
                 break  # Exit the loop if JSON is valid
             except json.JSONDecodeError as e:
+                 # Get error position
+                pos = e.pos
+                # Calculate start and end positions for context
+                start = max(0, pos - 10)
+                end = min(len(json_response), pos + 10)
+                # Extract the context around the error
+                context = json_response[start:end]
                 print(f"Error message: {str(e)}")
                 print(f"Error position: line {e.lineno}, column {e.colno}")
+                print(f"Error Line Context: {context}")
                 print(f"Error document: {e.doc}")
+            else:
+                raise ValueError(f"Invalid JSON response: {json_response} after {current_retry} retries")
         return message

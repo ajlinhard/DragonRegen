@@ -1,28 +1,30 @@
 import pyodbc
+import datetime
+import json
 from typing import Dict, List, Optional, Any, Union
 
-class DatabaseConnection:
+class DatabaseEngine:
     """Base class for database connection handling"""
     d_log_tables = {"dyn_sql_execution_log": {
     "purpose": "Track the execution of dynamic SQL commands",
-    "columns": [
+    "fields": [
       {"name": "execution_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the execution"}},
       {"name": "sql_command", "type": "String", "nullable": False, "metadata": {"description": "The SQL command that was executed"}},
-      {"name": "sql_params", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the command was executed"}},
-      {"name": "start_time", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the command was executed"}},
-      {"name": "stop_time", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the command was executed"}},
+      {"name": "sql_params", "type": "String", "nullable": False, "metadata": {"description": "The list of parameters used to replace the placeholders in the SQL command"}},
+      {"name": "start_time", "type": "String", "nullable": False, "metadata": {"description": "Timestamp when the command was executed"}},
+      {"name": "stop_time", "type": "String", "nullable": False, "metadata": {"description": "Timestamp when the command was executed"}},
       {"name": "status", "type": "String", "nullable": False, "metadata": {"description": "Status of the execution (success, failure)"}},
       {"name": "user_name", "type": "String", "nullable": False, "metadata": {"description": "Error message if execution failed"}},
       {"name": "process_id", "type": "String", "nullable": False, "metadata": {"description": "Processing ID initiation time. This plus Process ID should be unique on the server/system."}},
-      {"name": "process_login_time", "type": "String", "nullable": False, "metadata": {"description": "Processing ID of the execution"}},
+      {"name": "process_login_time", "type": "Timestamp", "nullable": False, "metadata": {"description": "Processing ID of the execution"}},
       {"name": "error_message", "type": "String", "nullable": True, "metadata": {"description": "Error message if execution failed"}},
-      {"name": "error_timestamp", "type": "Timestamp", "nullable": True, "metadata": {"description": "When the error occurred"}},
+      {"name": "error_timestamp", "type": "String", "nullable": True, "metadata": {"description": "When the error occurred"}},
       {"name": "metadata", "type": "JSON", "nullable": True,  # Assuming JSON is a valid type in your database
       	"metadata": {"description":"JSON field for any additional metadata related to the execution"}}
     ]
     }}
     
-    def __init__(self, connection_string: str, autocommit: bool = True):
+    def __init__(self, connection_string: str, autocommit: bool = True, b_debug: bool = False):
         """Initialize database connection
         
         Args:
@@ -30,13 +32,14 @@ class DatabaseConnection:
         """
         self.connection_string = connection_string
         self.autocommit = autocommit
+        self.b_debug = b_debug
         self.connection = None
         self.cursor = None
     
     def connect(self):
         """Connect to the database"""
         try:
-            self.connection = pyodbc.connect(self.connection_string)
+            self.connection = pyodbc.connect(self.connection_string, autocommit=self.autocommit)
             self.cursor = self.connection.cursor()
             return True
         except pyodbc.Error as e:
@@ -61,7 +64,7 @@ class DatabaseConnection:
             self.connection.rollback()
 
     def log_execution(self, sql: str, params: Optional[Union[Dict[str, Any], List[Any]]], 
-                      stats: dict, start_time: pyodbc.datetime.datetime, stop_time: pyodbc.datetime.datetime):
+                      stats: dict, start_time: datetime.datetime, stop_time: datetime.datetime):
         """Log the execution of a SQL command
         
         Args:
@@ -71,20 +74,28 @@ class DatabaseConnection:
             start_time: Start time of the execution
             stop_time: Stop time of the execution
         """
-        log_sql = """
+        # TODO: (option) to add this execution with the incoming sql using cursor.executemany(), but need to confirm what happens on error mid iteration.
+        log_sql = f"""
             INSERT INTO dyn_sql_execution_log 
             (sql_command, sql_params, start_time, stop_time, status, user_name, process_id, process_login_time, error_message, error_timestamp, metadata)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?
+                , {self.user_name_str()}
+                , {self.process_id_str()}
+                , {self.process_login_time_str()}
+                , ?, ?, ?)
         """
-        params = (sql, str(params), 
-                  start_time, stop_time, stats.get("status", "success")
-                  , self.user_name_str()
-                  , self.process_id_str()
-                  , self.process_login_time_str()
-                  , stats.get("error_message"), stats.get("error_timestamp"), str(stats.get("metadata"))
+        log_params = (sql
+                  , str(params)
+                  , start_time
+                  , stop_time
+                  , stats.get("status", "SUCCESS")
+                  , stats.get("error_message", "null")
+                  , stats.get("error_timestamp", "null")
+                  , json.dumps(stats.get("metadata", "null"))
                 )
         try:
-            self.cursor.execute(log_sql, )
+            if self.b_debug: print(log_sql)
+            self.cursor.execute(log_sql, log_params)
             self.commit()
         except pyodbc.Error as e:
             print(f"Error logging SQL execution: {e}")
@@ -118,13 +129,14 @@ class DatabaseConnection:
         results = None
         stats = {}
         try:
-            start_time = pyodbc.datetime.datetime.now()
+            start_time = datetime.datetime.now()
+            if self.b_debug: print(f"Executing SQL: {sql} with params: {params}")
             if params:
                 self.cursor.execute(sql, params)
             else:
                 self.cursor.execute(sql)
             stats['status'] = "SUCCESS"
-            stop_time = pyodbc.datetime.datetime.now()
+            stop_time = datetime.datetime.now()
             
             if fetch_row_count is not None:
                 rows = self.cursor.fetchmany(fetch_row_count)
@@ -136,10 +148,9 @@ class DatabaseConnection:
         except pyodbc.Error as e:
             print(f"Error executing SQL: {e}")
             stats['status'] = "FAILED"
-            stop_time = pyodbc.datetime.datetime.now()
+            stop_time = datetime.datetime.now()
             raise e
         finally:
-            stop_time = pyodbc.datetime.datetime.now()
             self.log_execution(sql, params, stats, start_time, stop_time)
         return results
 
@@ -181,7 +192,7 @@ class DatabaseConnection:
             self.rollback()
             return False
 
-    def insert(self, table: str, data: Dict[str, Any], lookup_keys: List[str] = None) -> bool:
+    def insert(self, table: str, data: Dict[str, Any]) -> bool:
         """Insert data into the database
         
         Args:
@@ -231,3 +242,22 @@ class DatabaseConnection:
         except pyodbc.Error as e:
             print(f"Error selecting data: {e}")
             return None
+        
+    def create_table(self, table_name, schema):
+        """
+        Create a table in Spark with the given name and schema.
+        """
+        # Check if the schema is a string or StructType
+        if isinstance(schema, str):
+            pass  # Assuming schema is a SQL string, no need to create an empty DataFrame
+        # elif isinstance(schema, StructType):
+        #     schema = SchemaMSSQL.generate_schema_sql(json.loads(schema.json()))
+        else:
+            raise ValueError(f"Schema should be a string or StructType, but was {type(schema)}")
+        
+        s_create_table = f"""if OBJECT_ID('dbo.{table_name}', 'U') IS NULL
+        CREATE TABLE dbo.{table_name} 
+        ({schema})
+        ;"""
+        self.execute_w_logging(s_create_table)
+        return f"Table {table_name} created with schema: {schema}"

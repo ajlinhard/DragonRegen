@@ -53,8 +53,8 @@ class SchemaGenerator(ABC):
                 nullable = "NULL" if column.get("nullable", True) else "NOT NULL"
                 
                 # Check if this column is likely a primary key
-                if "primary key" in column["metadata"].lower():
-                    primary_key = column_name
+                if "primary_key" in column["metadata"].keys():
+                    primary_key = column_name["metadata"].get("primary_key", None)
                 
                 columns.append(f"    [{column_name}] {data_type} {nullable}")
             

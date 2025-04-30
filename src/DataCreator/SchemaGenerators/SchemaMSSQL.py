@@ -31,12 +31,13 @@ class SchemaMSSQL(SchemaGenerator):
                 column_name = column["name"]
                 data_type = SchemaMSSQL.validate_dataType(column.get("type", column.get("dataType")))
                 nullable = "NULL" if column.get("nullable", True) else "NOT NULL"
-                
+                column_def_str = f"    [{column_name}] {data_type} {nullable}"
                 # Check if this column is likely a primary key
-                if "primary key" in column["metadata"].lower():
-                    primary_key = column_name
+                if "primary_key" in column["metadata"].keys() or "primary key" in column["metadata"].get("description", "").lower():
+                    column_def_str += " IDENTITY(1,1)"
+                    primary_key = column["metadata"].get("primary_key", None)
                 
-                columns.append(f"    [{column_name}] {data_type} {nullable}")
+                columns.append(column_def_str)
             
             # Add primary key constraint if identified
             if primary_key:
@@ -54,7 +55,7 @@ class SchemaMSSQL(SchemaGenerator):
         """
          valid_data_types = {
         "Integer": "INT",
-        "String": "NVARCHAR(255)",
+        "String": "NVARCHAR(MAX)",
         "Float": "FLOAT",
         "Timestamp": "DATETIME2",
         "Boolean": "BIT",
