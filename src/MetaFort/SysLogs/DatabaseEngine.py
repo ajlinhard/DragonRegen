@@ -204,16 +204,19 @@ class DatabaseEngine:
         """
         columns = ', '.join(data.keys())
         placeholders = ', '.join(['?'] * len(data))
-        sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
+        sql = f"""INSERT INTO {table} ({columns}) VALUES ({placeholders})
+        SELECT SCOPE_IDENTITY();
+        """
         
         try:
             self.cursor.execute(sql, tuple(data.values()))
+            identity_value = self.cursor.fetchval()
             self.commit()
-            return True
+            return identity_value
         except pyodbc.Error as e:
             print(f"Error inserting data: {e}")
             self.rollback()
-            return False
+            return None
         
     def select_lookup(self, table: str, lookup_keys: List[str], lookup_values: List[Any]) -> Optional[Dict[str, Any]]:
         """Select data from the database based on lookup keys

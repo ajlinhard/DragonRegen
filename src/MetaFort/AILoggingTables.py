@@ -1,30 +1,19 @@
 
 class AILoggingTables():
-    d_system_tables = {"actions": {
-    "purpose": "Highest level object representing a group of related operations or tasks",
+    d_system_tables = {
+  "actions": {
+    "purpose": "Highest level object representing a group of related action or tasks",
     "fields": [
       {"name": "action_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the action"}},
-      {"name": "name", "type": "String", "nullable": False, "metadata": {"description": "Name of the action"}},
+      {"name": "action_name", "type": "String", "nullable": False, "metadata": {"description": "Name of the action"}},
+      {"name": "action_version", "type": "String", "nullable": False, "metadata": {"description": "Then version of the action"}},
+      {"name": "action_description", "type": "String", "nullable": False, "metadata": {"description": "description of the action"}},
+      {"name": "parent_action_id", "type": "Integer", "nullable": False, "metadata": {"description": "self referencing key of the parent action"}},
+      {"name": "group_action_id", "type": "Integer", "nullable": False, "metadata": {"description": "Name of the a set of actions that chained off each other. The value is the root action ID"}},
       {"name": "description", "type": "String", "nullable": True, "metadata": {"description": "Detailed description of the action's purpose"}},
-      {"name": "created_at", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the action was created"}},
-      {"name": "updated_at", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the action was last updated"}},
-      {"name": "status", "type": "String", "nullable": False, "metadata": {"description": "Current status of the action (active, completed, failed, etc.)"}},
-      {"name": "error_code", "type": "String", "nullable": True, "metadata": {"description": "Error code if action failed"}},
-      {"name": "error_message", "type": "String", "nullable": True, "metadata": {"description": "Detailed error message if action failed"}},
-      {"name": "error_timestamp", "type": "Timestamp", "nullable": True, "metadata": {"description": "When the error occurred at action level"}},
-      {"name": "metadata", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field for any additional action metadata"}}
-    ]
-  },
-  "sub_actions": {
-    "purpose": "Middle level object representing specific operations within an action",
-    "fields": [
-      {"name": "sub_action_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the sub-action"}},
-      {"name": "action_id", "type": "Integer", "nullable": False, "metadata": {"description": "Foreign key referencing the parent action"}},
-      {"name": "name", "type": "String", "nullable": False, "metadata": {"description": "Name of the sub-action"}},
-      {"name": "description", "type": "String", "nullable": True, "metadata": {"description": "Detailed description of the sub-action's purpose"}},
       {"name": "sequence_number", "type": "Integer", "nullable": False, "metadata": {"description": "Order of execution within the parent action"}},
-      {"name": "created_at", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the sub-action was created"}},
-      {"name": "updated_at", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the sub-action was last updated"}},
+      {"name": "created_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the sub-action was created"}},
+      {"name": "updated_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the sub-action was last updated"}},
       {"name": "status", "type": "String", "nullable": False, "metadata": {"description": "Current status of the sub-action"}},
       {"name": "error_code", "type": "String", "nullable": True, "metadata": {"description": "Error code if sub-action failed"}},
       {"name": "error_message", "type": "String", "nullable": True, "metadata": {"description": "Detailed error message if sub-action failed"}},
@@ -36,7 +25,7 @@ class AILoggingTables():
     "purpose": "Lowest level object representing individual API calls to AI services",
     "fields": [
       {"name": "request_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the request"}},
-      {"name": "sub_action_id", "type": "Integer", "nullable": False, "metadata": {"description": "Foreign key referencing the parent sub-action"}},
+      {"name": "action_id", "type": "Integer", "nullable": False, "metadata": {"description": "Foreign key referencing the parent action"}},
       {"name": "ai_service", "type": "String", "nullable": False, "metadata": {"description": "Name or identifier of the AI service being called"}},
       {"name": "endpoint", "type": "String", "nullable": False, "metadata": {"description": "Specific API endpoint that was called"}},
       {"name": "request_timestamp", "type": "Timestamp", "nullable": False, "metadata": {"description": "When the request was sent"}},
@@ -56,6 +45,8 @@ class AILoggingTables():
       {"name": "error_timestamp", "type": "Timestamp", "nullable": True, "metadata": {"description": "When the error occurred at request level"}},
       {"name": "is_error_resolved", "type": "Boolean", "nullable": True, "metadata": {"description": "Indicates if the error has been resolved"}},
       {"name": "resolution_notes", "type": "String", "nullable": True, "metadata": {"description": "Notes on how the error was resolved"}},
+      {"name": "RAG_IDs", "type": "JSON", "nullable": True, "metadata": {"description": "List of IDs for RAG (Retrieval-Augmented Generation) documents used in the request"}},
+      {"name": "RAG_Versions", "type": "JSON", "nullable": True, "metadata": {"description": "List of versions for RAG documents used in the request"}},
       {"name": "metadata", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field for any additional request/response metadata"}}
     ]
   },
