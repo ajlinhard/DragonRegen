@@ -86,6 +86,18 @@ class DataStructCreate(Action):
         self.engineered_prompt = engineering_prompt.replace("{{prompt}}",user_prompt)
         return self.engineered_prompt
     
+    def get_messages(self):
+        """
+        Get the messages for the action.
+        """
+        # This method should be overridden in subclasses to provide specific messages
+        if self.engineered_prompt is None:
+            raise ValueError("The prompt has not been engineered yet.")
+        return [
+            {"role": "user", "content": self.engineered_prompt},
+            {"role": "assistant", "content": "{"}
+        ]
+    
     def validate_parameters(self, parameters):
         """
         Validate the parameters for the action.

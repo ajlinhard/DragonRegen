@@ -29,7 +29,7 @@ class Action(ABC):
             "ai_tools": self.get_tools(),
         }
         self._status = 'INITIALIZED'
-        
+
     @classmethod
     def register(cls, action_name):
         def decorator(subclass):
@@ -125,6 +125,17 @@ class Action(ABC):
         self.user_prompt = user_prompt
         self.engineered_prompt = user_prompt
         return self.engineered_prompt
+    
+    @abstractmethod
+    def get_messages(self):
+        """
+        Get the messages for the action.
+        """
+        # This method should be overridden in subclasses to provide specific messages
+        return [
+            {"role": "user", "content": self.engineered_prompt},
+            {"role": "assistant", "content": "{"}
+        ]
     
     @abstractmethod
     def validate_parameters(self, parameters):

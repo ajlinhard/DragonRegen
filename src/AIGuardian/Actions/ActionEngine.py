@@ -86,11 +86,13 @@ class ActionEngine():
         kwargs.setdefault("max_tokens", 2000)
         kwargs.setdefault("temperature", 0.1)
         kwargs.setdefault("stop_sequences", ["}"])
+        kwargs["messages"] = self.action.get_messages()
+        create_func_params = ["model", "messages", "max_tokens", "temperature", "stop_sequences"]
         model_keys = ["model", "max_tokens", "temperature", "stop_sequences"]
         
         message = None
         # subset kwargs to only include model keys
-        create_params = {key: kwargs[key] for key in kwargs.keys() if key in model_keys}
+        create_params = {key: kwargs[key] for key in kwargs.keys() if key in create_func_params}
         table_name = AILoggingTables.AI_REQUEST_LOG_TABLE
         # Generate the JSON object using the AI client
         while(current_retry < retry_cnt):
