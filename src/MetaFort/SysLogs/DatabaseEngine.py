@@ -24,7 +24,7 @@ class DatabaseEngine:
     ]
     }}
     
-    def __init__(self, connection_string: str, autocommit: bool = True, b_debug: bool = False):
+    def __init__(self, connection_string: str, autocommit: bool = True, verbose: bool = False):
         """Initialize database connection
         
         Args:
@@ -32,7 +32,7 @@ class DatabaseEngine:
         """
         self.connection_string = connection_string
         self.autocommit = autocommit
-        self.b_debug = b_debug
+        self.verbose = verbose
         self.connection = None
         self.cursor = None
     
@@ -91,10 +91,10 @@ class DatabaseEngine:
                   , stats.get("status", "SUCCESS")
                   , stats.get("error_message", "null")
                   , stats.get("error_timestamp", "null")
-                  , json.dumps(stats.get("metadata", "null"))
+                  , None
                 )
         try:
-            if self.b_debug: print(log_sql)
+            if self.verbose: print(log_sql)
             self.cursor.execute(log_sql, log_params)
             self.commit()
         except pyodbc.Error as e:
@@ -130,7 +130,7 @@ class DatabaseEngine:
         stats = {}
         try:
             start_time = datetime.datetime.now()
-            if self.b_debug: print(f"Executing SQL: {sql} with params: {params}")
+            if self.verbose: print(f"Executing SQL: {sql} with params: {params}")
             if params:
                 self.cursor.execute(sql, params)
             else:
@@ -139,15 +139,19 @@ class DatabaseEngine:
             stop_time = datetime.datetime.now()
             
             if fetch_row_count is not None:
-                rows = self.cursor.fetchmany(fetch_row_count)
+                rows = self.cursor.fetchall()
+                # rows = self.cursor.fetchmany(fetch_row_count)
                 stats['status'] = "SUCCESS"
-                stats['metadata'] = {"rows": rows, "row_count": len(rows)}
-                results = dict(zip([column[0] for column in self.cursor.description], rows))
-            else:
-                stats['metadata'] = {"row_count": self.cursor.rowcount}
+                # stats['metadata'] = {"rows": rows}
+                results = [list(r) for r in rows]
+                # results = dict(zip([column[0] for column in self.cursor.description], rows))
+            # else:
+            #     stats['metadata'] = {"row_count": self.cursor.rowcount}
         except pyodbc.Error as e:
-            print(f"Error executing SQL: {e}")
+            if self.verbose: print(f"Error executing SQL: {e}")
             stats['status'] = "FAILED"
+            stats['error_message'] = str(e)
+            stats['error_timestamp'] = datetime.datetime.now()
             stop_time = datetime.datetime.now()
             raise e
         finally:
@@ -188,11 +192,10 @@ class DatabaseEngine:
             self.commit()
             return True
         except pyodbc.Error as e:
-            print(f"Error upserting data: {e}")
             self.rollback()
-            return False
+            raise pyodbc.Error(f"Error upserting data: {e}")
 
-    def insert(self, table: str, data: Dict[str, Any]) -> bool:
+    def insert(self, table: str, data: Dict[str, Any], output_data: List[Any] = None):
         """Insert data into the database
         
         Args:
@@ -203,20 +206,25 @@ class DatabaseEngine:
             True if the insert was successful, False otherwise
         """
         columns = ', '.join(data.keys())
+        output = ', INSERTED.'.join(output_data) if output_data else ''
         placeholders = ', '.join(['?'] * len(data))
-        sql = f"""INSERT INTO {table} ({columns}) VALUES ({placeholders})
-        SELECT SCOPE_IDENTITY();
+        sql = f"""INSERT INTO {table} ({columns}) 
+        {"OUTPUT INSERTED." + output if output else ""}
+        VALUES ({placeholders})
         """
+        print(f"SQL: {sql}")
         
         try:
-            self.cursor.execute(sql, tuple(data.values()))
-            identity_value = self.cursor.fetchval()
-            self.commit()
-            return identity_value
+            # self.cursor.execute(sql, tuple(data.values()))
+            output_list = None
+            if output_data:
+                output_list = self.execute_w_logging(sql, tuple(data.values()), fetch_row_count=1)
+            else: 
+                self.execute_w_logging(sql, tuple(data.values()), fetch_row_count=None)
+            return output_list
         except pyodbc.Error as e:
-            print(f"Error inserting data: {e}")
             self.rollback()
-            return None
+            raise pyodbc.Error(f"Error inserting data: {e}")
         
     def select_lookup(self, table: str, lookup_keys: List[str], lookup_values: List[Any]) -> Optional[Dict[str, Any]]:
         """Select data from the database based on lookup keys

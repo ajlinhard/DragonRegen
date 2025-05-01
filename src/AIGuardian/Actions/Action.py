@@ -1,20 +1,20 @@
 from abc import ABC, abstractmethod
 import datetime
-from ...MetaFort.SysLogs.DatabaseEngine import DatabaseEngine
+import json
+from ...MetaFort.AILoggingTables import AILoggingTables
 
-class Action():
+class Action(ABC):
     _registry = {}
 
-    def __init__(self, db_engine, parameters=None):
-        self.db_engine = db_engine
+    def __init__(self, parameters=None):
         self.parameters = parameters
         # action tree variables and identifiers
         self.action_id = None
         self.group_action_id = None
         self.sequence = 0
-        self.prompt = None
+        self.user_prompt = None
+        self.engineered_prompt = None
         self.response = None
-        self.ls_next_actions = []
         self.parent_action = None
         # read-only properties
         self._name = self.__class__.__name__
@@ -22,9 +22,14 @@ class Action():
         self._action_type = Action.get_action_type()
         self._action_version = Action.get_action_version()
         self._system_prompt = Action.get_system_prompt()
+        self.model_parameters = {"max_tokens": 2000,
+            "temperature": 0.1,
+            "stop_sequences": ["}"],
+            "pref_model_type": "COMPLEX",
+            "ai_tools": self.get_tools(),
+        }
         self._status = 'INITIALIZED'
-        self.set_action_id()
-
+        
     @classmethod
     def register(cls, action_name):
         def decorator(subclass):
@@ -38,7 +43,6 @@ class Action():
         Create a new action from a parent action.
         """
         new_action = cls(
-            db_engine=parent_action.db_engine,
             parameters=cls.potential_parameters(parent_action.parameters),
         )
         new_action.parent_action = parent_action
@@ -80,15 +84,6 @@ class Action():
 
         return parameters
     
-    @abstractmethod
-    def next_actions(self):
-        """
-        Get the next actions based on the current action.
-        """
-        # This method should be overridden in subclasses to provide specific next actions
-        return self.ls_next_actions
-
-    
     # region Properties
     @property
     def name(self):
@@ -114,34 +109,12 @@ class Action():
     def status(self, value):
         self._status = value
 
-    # endregion Properties
-
-    # region setup methods
-    def set_action_id(self):
-        """
-        Get the action ID.
-        """
-        if self.action_id is None:
-            # put or pull from the database
-            table = 'actions'
-            data_row = {"action_name": self.name,
-                "action_version": self.action_version,
-                "parent_action_id": self.parent_action.action_id if self.parent_action else None,
-                "group_action_id": self.group_action_id,
-                "description": self.description,
-                "sequence": self.sequence,
-                "created_dt": datetime.datetime.now(),
-                "updated_dt": datetime.datetime.now(),
-                "status": self.status,
-                "metadata": self.parameters,
-            }
-            self.action_id = self.db_engine.insert(table=table, data=data_row)
-            if self.group_action_id is None:
+    def set_action_id(self, action_id=None):
+        self.action_id = action_id
+        if self.group_action_id is None:
                 self.group_action_id = self.action_id
-            # self.db_engine.update(table=table, data={"updated_dt": datetime.datetime.now()}, where={"action_id": self.action_id})
-        return self.action_id
-    
-    # endregion setup methods
+
+    # endregion Properties
 
     @abstractmethod
     def engineer_prompt(self, user_prompt):
@@ -149,16 +122,9 @@ class Action():
         Generate a prompt for the action based on the user input.
         """
         # This method should be overridden in subclasses to provide specific prompts
-        return user_prompt
-    
-
-    @abstractmethod
-    def generate_action(self, user_prompt):
-        """
-        Generate an action based on the user input.
-        """
-        # This method should be overridden in subclasses to provide specific actions
-        return self.engineer_prompt(user_prompt)
+        self.user_prompt = user_prompt
+        self.engineered_prompt = user_prompt
+        return self.engineered_prompt
     
     @abstractmethod
     def validate_parameters(self, parameters):
@@ -166,7 +132,18 @@ class Action():
         Validate the parameters for the action.
         """
         # This method should be overridden in subclasses to provide specific validation
+         # Reserved parameters for the actions
+            # ai_tools -> used for feeding to the AI to potentially use.
+            # rag_objects -> used for potentially pulling or pushing to the AI.
         return True
+    
+    @abstractmethod
+    def hygiene_output(self, text_response):
+        """
+        Clean the output of the action.
+        """
+        # This method should be overridden in subclasses to provide specific cleaning
+        return text_response
     
     @abstractmethod
     def validate_output(self, output):
@@ -176,22 +153,13 @@ class Action():
         # This method should be overridden in subclasses to provide specific validation
         return True
     
-    def log_action(self):
-        """
-        Log the actions to the database. Included the request table.
-        """
-        # log the request
-
-        # log the action completed or failed
-
     @abstractmethod
     def complete_action(self):
         """
         Complete the action based of the values from the AI gnerated response.
         """
         # This method should be overridden in subclasses to provide specific completion actions
-        self.log_action()
-        return self.action_id
+        pass
 
     @abstractmethod
     def next_action(self):
@@ -199,4 +167,11 @@ class Action():
         Choose the next action based on the current action.
         """
         # This method should be overridden in subclasses to provide specific next actions
-        return self.ls_next_actions
+        return None
+    
+    def get_tools(self):
+        """
+        Get the tools for this action class or utility classes for the AI to consider using.
+        """
+        # This method should be overridden in subclasses to provide specific tools
+        return None
