@@ -15,14 +15,15 @@ class Action(ABC):
         self.user_prompt = None
         self.engineered_prompt = None
         self.response = None
+        self.text_response = None
         self.parent_action = None
         # read-only properties
         self._name = self.__class__.__name__
-        self._description = Action.get_description()
+        self._description = Action.get_description() # self.description 
         self._action_type = Action.get_action_type()
         self._action_version = Action.get_action_version()
         self._system_prompt = Action.get_system_prompt()
-        self.model_parameters = {"max_tokens": 2000,
+        self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["}"],
             "pref_model_type": "COMPLEX",
@@ -92,6 +93,7 @@ class Action(ABC):
     @property
     def description(self):
         return self._description
+        # return self.__class__.get_description()
     
     @property
     def action_type(self):
@@ -162,6 +164,7 @@ class Action(ABC):
         Validate the output of the action.
         """
         # This method should be overridden in subclasses to provide specific validation
+        self.text_response = text_response
         return True
     
     @abstractmethod

@@ -5,27 +5,28 @@ from ..Actions.Action import Action
 from ..Actions.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 
-@Action.register("DataStructCreate")
-class DataStructCreate(Action):
+@Action.register("ActionSayHello")
+class ActionSayHello(Action):
 
     def __init__(self, parameters=None):
         self.parameters = parameters
         super().__init__(parameters=parameters)
-        self.model_parameters = {"max_tokens": 10000,
+        self.model_parameters = {"model": "claude-3-haiku-20240307",
+            "max_tokens": 200,
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
-            "pref_model_type": "COMPLEX",
+            "pref_model_type": "SIMPLE",
             "ai_tools": self.get_tools(),
         }
 
     # region static variables
     @staticmethod
     def get_description():
-        return 'The action aims to create a data system structure relavent to the users requet. Complete with tables, columns, data types.'
+        return 'The action aims to hello to the user.'
     
     @staticmethod
     def get_action_type():
-        return 'DataStructCreate'
+        return 'ActionSayHello'
     
     @staticmethod
     def get_action_version():
@@ -33,7 +34,7 @@ class DataStructCreate(Action):
 
     @staticmethod
     def get_system_prompt():
-        return """You are an expert data engineer, with an innate ability to build schemas for data architectures of business request/requirements."""
+        return """You are an expert greeter, with an innate ability to say hello to the world in a succinct way."""
     
     # endregion static variables
 
@@ -43,7 +44,6 @@ class DataStructCreate(Action):
         Generate potential parameters for the action.
         """
         # This method should be overridden in subclasses to provide specific parameters
-
         return parameters
 
     def engineer_prompt(self, user_prompt):
@@ -51,29 +51,7 @@ class DataStructCreate(Action):
         Generate a prompt for the action based on the user input.
         """
         # Alter input to try to format the response:
-        engineering_prompt = """Please take the following <business_requirements> and create the table list and schema for the the request.
-        <business_requirements>
-        {{prompt}}
-        </business_requirements>
-        Please provide the response in a JSON format like the <JSON_Template> below:
-        <JSON_Template>
-        {"table_name_1": {
-            "purpose": "short description of tables usage in the architecture",
-            "fields":{"column_name_1": "unique ID, short description of column",
-            , "column_name_2": "short description of column"
-            , "column_name_3": "short description of column"
-            }},
-        "table_name_2": {
-            "purpose": "short description of tables usage in the architecture",
-            "fields":
-            {"column_name_1": "unique ID, short description of column",
-            , "column_name_2": "short description of column"
-            , "column_name_3": "short description of column"
-            , "column_name_4": "short description of column"
-            }}
-        }
-        </JSON_Template>
-        """
+        engineering_prompt = """{{prompt}}"""
         # Alter the prompt to include the JSON template:
         self.user_prompt = user_prompt
         self.engineered_prompt = engineering_prompt.replace("{{prompt}}",user_prompt)
@@ -88,7 +66,6 @@ class DataStructCreate(Action):
             raise ValueError("The prompt has not been engineered yet.")
         return [
             {"role": "user", "content": self.engineered_prompt},
-            {"role": "assistant", "content": "<JSON_Template>\n{"}
         ]
     
     def validate_parameters(self, parameters):
@@ -102,39 +79,14 @@ class DataStructCreate(Action):
         """
         Clean the output of the action.
         """
-        # Check if the last and first characters are brackets
-        text_response = text_response.replace("<JSON_Template>", "")
-        text_response = text_response.replace("</JSON_Template>", "")
-        text_response = text_response.strip()
-        if text_response[0] != '{':
-            # Remove the first and last characters
-            text_response = '{' + text_response
-        if text_response[-1] != '}':
-            text_response += '}'
         return text_response
     
     def validate_output(self, text_response):
         """
         Validate the output of the action.
         """
-        try:
-            json.loads(text_response)
-            self.text_response = text_response
-            return True
-        except json.JSONDecodeError as e:
-            # Get error position
-            pos = e.pos
-            # Calculate start and end positions for context
-            start = max(0, pos - 10)
-            end = min(len(text_response), pos + 10)
-            # Extract the context around the error
-            context = text_response[start:end]
-            new_error_msg = f"Error message: {str(e)}" + \
-                f"Error position: line {e.lineno}, column {e.colno}" + \
-                f"Error Line Context: {context}" + \
-                f"Error document: {e.doc}"
-            raise ValidateAIResponseError(new_error_msg)
-        return False
+        self.text_response = text_response
+        return True
     
     def complete_action(self):
         """
@@ -155,4 +107,4 @@ class DataStructCreate(Action):
         Get the tools for this action class or utility classes for the AI to consider using.
         """
         # This method should be overridden in subclasses to provide specific tools
-        return [SchemaMSSQL.create_table]
+        return []

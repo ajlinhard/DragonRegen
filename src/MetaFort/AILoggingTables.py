@@ -32,12 +32,12 @@ class AILoggingTables():
       {"name": "status", "type": "String", "nullable": True, "metadata": {"description": "Status of the request (SUCCESS, FAILURE, PENDING)"}},
       # Model specific fields
       {"name": "ai_service", "type": "String", "nullable": False, "metadata": {"description": "Name or identifier of the AI service being called"}},
-      {"name": "model", "type": "String", "nullable": True, "metadata": {"description": "Version of the AI model used (if applicable)"}},
-      {"name": "request_parameters", "type": "JSON", "nullable": False, "metadata": {"description": "JSON field containing all request parameters sent to the API"}},
+      {"name": "model", "type": "String", "nullable": False, "metadata": {"description": "Version of the AI model used (if applicable)"}},
+      {"name": "request_parameters", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field containing all request parameters sent to the API"}},
       {"name": "user_prompt", "type": "String", "nullable": True, "metadata": {"description": "The original user prompt sent to the application."}},
       {"name": "engineered_prompt", "type": "String", "nullable": True, "metadata": {"description": "The altered prompt sent to the AI service."}},
       # response fields
-      {"name": "api_request_id", "type": "Integer", "nullable": True, "metadata": {"description": "Foreign key referencing the request id returned by the API"}},
+      {"name": "api_request_id", "type": "String", "nullable": True, "metadata": {"description": "Foreign key referencing the request id returned by the API. Usually a "}},
       {"name": "raw_response", "type": "JSON", "nullable": True, "metadata": {"description": "Full raw response from the API"}},
       {"name": "parsed_results", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field containing parsed/processed results"}},
       {"name": "response_metadate", "type": "JSON", "nullable": True, "metadata": {"description": "Additional metadata from the API response"}},

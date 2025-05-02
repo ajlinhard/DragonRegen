@@ -54,7 +54,7 @@ class ActionEngine():
         Run the action engine with the provided prompt.
         """
         step_cnt = 0
-        while step_cnt < self.sequence_limit or self.action is None:
+        while step_cnt < self.sequence_limit and self.action is not None:
             self.start_action_id()
             # TODO: add a pre-engineer prompt step to extract parameters and validate.
 
@@ -69,20 +69,20 @@ class ActionEngine():
             # 2. Then use the validate_output method in the action class.
             # 3. If the output is valid, then log the action to the database.
             result = self.generate_action()
-
+            self.action.response = result
             # Complete Action
             self.action.complete_action()
             
             # Log the results to the database
-            ls_next_steps = self.action.next_steps()
+            ls_next_steps = self.action.next_action()
             step_cnt += 1
             self.action = ls_next_steps[0] if len(ls_next_steps) > 0 else None
         
-    def generate_action(self, retry_cnt=2, **kwargs):
+    def generate_action(self, retry_cnt=1, **kwargs):
         current_retry = 0
         # Set default values for parameters
         kwargs = dict(**kwargs, **self.action.model_parameters)
-        kwargs.setdefault("model", "claude-3-sonnet-latest")
+        kwargs.setdefault("model", "claude-3-7-sonnet-20250219")
         kwargs.setdefault("max_tokens", 2000)
         kwargs.setdefault("temperature", 0.1)
         kwargs.setdefault("stop_sequences", ["}"])
@@ -137,30 +137,30 @@ class ActionEngine():
                     "status": "SUCCESS" if log_error is None else "FAILED",
                     "ai_service": "Anthropic",
                     "model": kwargs["model"],
-                    "request_parameters": {key: kwargs[key] for key in model_keys if key in kwargs},
+                    "request_parameters": json.dumps({key: kwargs[key] for key in model_keys if key in kwargs}),
                     "user_prompt": self.action.user_prompt,
                     "engineered_prompt": self.action.engineered_prompt,
-                    "api_request_id": message._request_id,
+                    "api_request_id": str(message._request_id),
                     "raw_response": message.content[0].text,
                     "parsed_results": text_response,
-                    "response_metadate": {"role": message.role, 
+                    "response_metadate": json.dumps({"role": message.role, 
                                         "stop_sequence": message.stop_sequence, 
                                         "stop_reason": message.stop_reason, 
-                                        "usage": vars(message.usage)},
+                                        "usage": vars(message.usage)}),
                     "input_tokens": message.usage.input_tokens,
                     "output_tokens": message.usage.output_tokens,
                     "request_timestamp": request_timestamp,
                     "response_timestamp": response_timestamp,
                     "duration_ms": duration_ms,
-                    "error_code": log_error.code if log_error and hasattr(log_error.code) else None,
-                    "error_message": None,
-                    "error_timestamp": None,
-                    "retry_cnt": retry_cnt,
+                    "error_code":  str(type(log_error)) if log_error else None, #log_error.__class__.__name__
+                    "error_message": str(log_error) if log_error else None,
+                    "error_timestamp": datetime.datetime.now() if log_error else None,
+                    "retry_cnt": current_retry-1,
                     "RAG_Embeding_Model": None,
                     "RAG_IDs": None,
                     "RAG_Versions": None,
                     "metadata": None,
                 }
-                self.db_engine.insert(table_name, data_row=data_row)
+                self.db_engine.insert(table_name, data=data_row)
             #end while loop
         return message
