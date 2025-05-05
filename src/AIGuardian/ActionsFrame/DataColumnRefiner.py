@@ -4,6 +4,7 @@ import json
 from ..ActionsFrame.Action import Action
 from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
+from ...DataCreator.ColGenerators import *
 
 @Action.register("DataStructCreate")
 class DataStructCreate(Action):
