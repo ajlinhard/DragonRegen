@@ -1,8 +1,8 @@
 import json
 from ..ActionsFrame.Action import Action
-from ..ActionsFrame.DataColumnRefiner import DataColumnRefiner
+from ..ActionGenerator.ColumnRefiner import ColumnRefiner
 
-class ColumnRefiner(Action):
+class SchemaRefiner(Action):
     def __init__(self, parameters, schema):
         self.schema = schema
         super().__init__(parameters)
@@ -55,13 +55,12 @@ class ColumnRefiner(Action):
         self.child_action = [] if self.child_action is None else self.child_action
         for table_name, table_info in self.schema.items():
             # Generate actions for each table and its fields
-            for key, val in table_info["fields"].items():
-                action_parameters = {
-                    "table_name": table_name,
-                    "purpose": table_info["purpose"],
-                    "field": {key: val}
-                }
-            action = DataColumnRefiner.from_parent(action_parameters)
+            action_parameters = {
+                "table_name": table_name,
+                "purpose": table_info["purpose"],
+                "fields": table_info["fields"]
+            }
+            action = ColumnRefiner.from_parent(action_parameters)
             self.child_action.append(action)
 
         return self.child_action
