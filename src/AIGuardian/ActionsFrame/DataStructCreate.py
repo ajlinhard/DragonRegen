@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import datetime
 import json
+from ..AIUtils.GenAIUtils import GenAIUtils
 from ..ActionsFrame.Action import Action
 from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
@@ -8,8 +9,8 @@ from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 @Action.register("DataStructCreate")
 class DataStructCreate(Action):
 
-    def __init__(self, parameters=None):
-        self.parameters = parameters
+    def __init__(self, input_params=None):
+        self.input_params = input_params
         super().__init__(parameters=parameters)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
@@ -36,15 +37,6 @@ class DataStructCreate(Action):
         return """You are an expert data engineer, with an innate ability to build schemas for data architectures of business request/requirements."""
     
     # endregion static variables
-
-    @staticmethod
-    def potential_parameters(parameters):
-        """
-        Generate potential parameters for the action.
-        """
-        # This method should be overridden in subclasses to provide specific parameters
-
-        return parameters
 
     def engineer_prompt(self, user_prompt):
         """
@@ -102,16 +94,7 @@ class DataStructCreate(Action):
         """
         Clean the output of the action.
         """
-        # Check if the last and first characters are brackets
-        text_response = text_response.replace("<JSON_Template>", "")
-        text_response = text_response.replace("</JSON_Template>", "")
-        text_response = text_response.strip()
-        if text_response[0] != '{':
-            # Remove the first and last characters
-            text_response = '{' + text_response
-        if text_response[-1] != '}':
-            text_response += '}'
-        return text_response
+        return GenAIUtils.hygiene_to_json(text_response)
     
     def validate_output(self, text_response):
         """

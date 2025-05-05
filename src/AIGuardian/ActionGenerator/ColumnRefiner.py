@@ -1,69 +1,59 @@
 import json
 from ..ActionsFrame.Action import Action
-from ..ActionsFrame.DataColumnRefiner import DataColumnRefiner
+from ..ActionGenerator.ActionGenerator import ActionGenerator
+from ..ActionsFrame import DataColumnType, DataColumnRefiner
 
-class ColumnRefiner(Action):
-    def __init__(self, parameters, schema):
+
+class ColumnRefiner(ActionGenerator):
+    def __init__(self, input_params, schema):
         self.schema = schema
-        super().__init__(parameters)
+        super().__init__(input_params)
+
+    # region static variables
+    @staticmethod
+    def get_description():
+        return """Create a set of sub-actions to refine the schema with more details."""
     
     @staticmethod
-    def potential_parameters(parameters):
-        """
-        Generate potential parameters for the action.
-        """
-        # This method should be overridden in subclasses to provide specific parameters
-
-        return parameters
+    def get_action_type():
+        return 'schema'
     
-    @classmethod
-    def from_json(cls, json_schema):
-        """
-        Create a SchemaRefiner object from a JSON schema.
-        """
-        json_dict = json.loads(json_schema)
-        ls_table_keys = ['purpose', 'fields']
-        ls_fields_keys = ['name', 'description', 'data_type']
-        # iterate over each table, which is reprented by each key in the json_dict
-        for key, val in json_dict.items():
-            # confirm the value is a dictionary
-            if isinstance(val, dict):
-                # Check the val dictionary has the fields and purpose keys
-                st_overlap = set(val.keys()) & set(ls_table_keys)
-                if len(st_overlap) == len(ls_table_keys):
-                    # Check each field has the minimum key set
-                    for fields_val in val['fields'].values():
-                        if isinstance(fields_val, dict):
-                            st_overlap = set(fields_val.keys()) & set(ls_fields_keys)
-                            if len(st_overlap) != len(ls_fields_keys):
-                                raise ValueError(f"Invalid field schema for table {key}: {fields_val}")
-                        else:
-                            raise ValueError(f"Invalid field schema for table {key}: {fields_val}")
-                else:
-                    raise ValueError(f"Invalid minimum keys for table {key}: is missing {set(ls_table_keys) - st_overlap}")
-            else:
-                raise ValueError(f"Invalid structure for table {key} should be a dictionarym but is {type(val)}")
+    @staticmethod
+    def get_action_version():
+        return '0.0.1'
 
-                for sub_key in val.keys():
-                    if sub_key not in ['purpose', 'columns']
-        return cls(schema=json_schema)
+    # endregion static variables
     
+    def get_output_params_struct(self):
+        """
+        A representtation of the output coming from this step. (output_type, output_struct_str)
+        """
+        # This method should be overridden in subclasses to provide specific output parameters
+        return {
+            "output_type": GenAIUtils.valid_output_type("ActionList"),
+            "output_struct": [ColumnRefiner],
+        }
+    
+    # region Action Methods
     def geneterate_actions(self):
         """
         Generate actions based on the schema.
         """
         self.child_action = [] if self.child_action is None else self.child_action
-        for table_name, table_info in self.schema.items():
+        table_name = self.input_params.get("table_name")
+        table_purpose = self.input_params.get("purpose")
+        for col_name, col_description in self.input_params.items():
             # Generate actions for each table and its fields
-            for key, val in table_info["fields"].items():
-                action_parameters = {
-                    "table_name": table_name,
-                    "purpose": table_info["purpose"],
-                    "field": {key: val}
-                }
-            action = DataColumnRefiner.from_parent(action_parameters)
+            action_parameters = {
+                "table_name": table_name,
+                "purpose": table_purpose,
+                "column_name": col_name,
+                "description": col_description,
+            }
+            action_1 = DataColumnType(action_parameters)
             self.child_action.append(action)
-
+            action_2 = DataColumnRefiner(action_parameters, parent_action=action_1)
+            self.child_action.append(action_2)
         return self.child_action
 
     def run(self, user_prompt):
@@ -74,3 +64,6 @@ class ColumnRefiner(Action):
         for action in self.child_action:
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)
+
+    # endregion Action Methods
+    

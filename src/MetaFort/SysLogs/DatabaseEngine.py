@@ -212,7 +212,8 @@ class DatabaseEngine:
         {"OUTPUT INSERTED." + output if output else ""}
         VALUES ({placeholders})
         """
-        print(f"SQL: {sql}")
+        if self.verbose:
+            print(f"SQL: {sql}")
         
         try:
             # self.cursor.execute(sql, tuple(data.values()))
@@ -222,6 +223,41 @@ class DatabaseEngine:
             else: 
                 self.execute_w_logging(sql, tuple(data.values()), fetch_row_count=None)
             return output_list
+        except pyodbc.Error as e:
+            self.rollback()
+            raise pyodbc.Error(f"Error inserting data: {e}")
+
+    def update(self, table: str, data: Dict[str, Any], where = None):
+        """Insert data into the database
+        
+        Args:
+            table: Name of the table to insert data into
+            data: Dictionary of column names and values to insert
+        
+        Returns:
+            True if the insert was successful, False otherwise
+        """
+        columns = ', '.join(data.keys())
+        update_values = ', '.join([f"{key} = ?" for key in data.keys()])
+        sql_params = tuple(data.values())
+        conditions = ''
+        if where is None:
+            conditions = ''
+        elif isinstance(where, str):
+            conditions = where
+        else:
+            conditions = ' AND '.join([f"{key} = ?" for key in where.keys()])
+            sql_params += tuple(where.values())
+
+        sql = f"""UPDATE {table}
+        SET {update_values}
+        {'WHERE ' + conditions if conditions else ''}
+        """
+        if self.verbose:
+            print(f"SQL: {sql}")
+        
+        try:
+            output_list = self.execute_w_logging(sql, sql_params, fetch_row_count=None)
         except pyodbc.Error as e:
             self.rollback()
             raise pyodbc.Error(f"Error inserting data: {e}")

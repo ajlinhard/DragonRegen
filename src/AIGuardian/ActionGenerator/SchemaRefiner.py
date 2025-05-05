@@ -1,20 +1,28 @@
 import json
 from ..ActionsFrame.Action import Action
+from ..ActionGenerator.ActionGenerator import ActionGenerator
 from ..ActionGenerator.ColumnRefiner import ColumnRefiner
 
-class SchemaRefiner(Action):
-    def __init__(self, parameters, schema):
+
+class SchemaRefiner(ActionGenerator):
+    def __init__(self, input_params, schema):
         self.schema = schema
-        super().__init__(parameters)
+        super().__init__(input_params)
+
+    # region static variables
+    @staticmethod
+    def get_description():
+        return """Create a set of sub-actions to refine the schema with more details."""
     
     @staticmethod
-    def potential_parameters(parameters):
-        """
-        Generate potential parameters for the action.
-        """
-        # This method should be overridden in subclasses to provide specific parameters
+    def get_action_type():
+        return 'schema'
+    
+    @staticmethod
+    def get_action_version():
+        return '0.0.1'
 
-        return parameters
+    # endregion static variables
     
     @classmethod
     def from_json(cls, json_schema):
@@ -48,6 +56,17 @@ class SchemaRefiner(Action):
                     if sub_key not in ['purpose', 'columns']
         return cls(schema=json_schema)
     
+    def get_output_params_struct(self):
+        """
+        A representtation of the output coming from this step. (output_type, output_struct_str)
+        """
+        # This method should be overridden in subclasses to provide specific output parameters
+        return {
+            "output_type": GenAIUtils.valid_output_type("ActionList"),
+            "output_struct": [ColumnRefiner],
+        }
+    
+    # region Action Methods
     def geneterate_actions(self):
         """
         Generate actions based on the schema.
@@ -60,7 +79,7 @@ class SchemaRefiner(Action):
                 "purpose": table_info["purpose"],
                 "fields": table_info["fields"]
             }
-            action = ColumnRefiner.from_parent(action_parameters)
+            action = ColumnRefiner(action_parameters)
             self.child_action.append(action)
 
         return self.child_action
@@ -73,3 +92,5 @@ class SchemaRefiner(Action):
         for action in self.child_action:
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)
+
+    # region Action Methods

@@ -8,9 +8,9 @@ from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 @Action.register("ActionSayHello")
 class ActionSayHello(Action):
 
-    def __init__(self, parameters=None):
-        self.parameters = parameters
-        super().__init__(parameters=parameters)
+    def __init__(self, input_params=None):
+        self.input_params = input_params
+        super().__init__(input_params=input_params)
         self.model_parameters = {"model": "claude-3-haiku-20240307",
             "max_tokens": 200,
             "temperature": 0.1,
@@ -38,13 +38,12 @@ class ActionSayHello(Action):
     
     # endregion static variables
 
-    @staticmethod
-    def potential_parameters(parameters):
+    def get_output_params_struct(self):
         """
-        Generate potential parameters for the action.
+        A representtation of the output coming from this step. (output_type, output_struct_str)
         """
-        # This method should be overridden in subclasses to provide specific parameters
-        return parameters
+        # This method should be overridden in subclasses to provide specific output parameters
+        return super().get_output_params_struct()
 
     def engineer_prompt(self, user_prompt):
         """
@@ -88,6 +87,7 @@ class ActionSayHello(Action):
         self.text_response = text_response
         return True
     
+    @Action.record_step("Complete Action")
     def complete_action(self):
         """
         Complete the action based of the values from the AI gnerated response.

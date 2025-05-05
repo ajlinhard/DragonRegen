@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import anthropic
 
 # Internal imports
+from ..AIUtils.GenAIUtils import GenAIUtils
 from ..Actions.ActionExceptions import ValidateAIResponseError
 from ...MetaFort.AILoggingTables import AILoggingTables
 from src.MetaFort.SysLogs.DatabaseEngine import DatabaseEngine
@@ -12,8 +13,9 @@ from src.MetaFort.SysLogs.DatabaseEngine import DatabaseEngine
 class Action(ABC):
     _registry = {}
 
-    def __init__(self, parameters=None, sequence_limit=10, verbose=False):
-        self.parameters = parameters
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
+        self.input_params = input_params
+        self.output_params = None
         self.verbose = verbose
         # action tree variables and identifiers
         self.action_id = None
@@ -24,7 +26,7 @@ class Action(ABC):
         self.engineered_prompt = None
         self.response = None
         self.text_response = None
-        self.parent_action = None
+        self.parent_action = parent_action
         self.child_action = None
         # read-only properties
         self._name = self.__class__.__name__
@@ -38,12 +40,12 @@ class Action(ABC):
             "pref_model_type": "COMPLEX",
             "ai_tools": self.get_tools(),
         }
-        self._status = 'INITIALIZED'
+        self._step_name = 'CREATED'
+        self._step_name_code = 0
+        self.is_completed = False
         ## Initialize the AI client
         self.ai_client = None
         self.db_engine = None
-        self.setup_client()
-        self.setup_db_engine()
 
     @classmethod
     def register(cls, action_name):
@@ -58,12 +60,9 @@ class Action(ABC):
         Create a new action from a parent action.
         """
         new_action = cls(
-            parameters=cls.potential_parameters(parent_action.parameters),
+            parent_action=parent_action,
         )
-        new_action.parent_action = parent_action
-        new_action.group_action_id = parent_action.action_id
-        new_action.sequence = parent_action.sequence + 1
-        new_action.set_action_id()
+        new_action.initialize()
         return new_action
 
     # region static variables
@@ -89,16 +88,6 @@ class Action(ABC):
     
     # endregion static variables
 
-    @staticmethod
-    @abstractmethod
-    def potential_parameters(parameters):
-        """
-        Generate potential parameters for the action.
-        """
-        # This method should be overridden in subclasses to provide specific parameters
-
-        return parameters
-    
     # region Properties
     @property
     def name(self):
@@ -118,12 +107,28 @@ class Action(ABC):
         return self._action_version
     
     @property
-    def status(self):
-        return self._status
+    def step_name(self):
+        return self._step_name
     
-    @status.setter
-    def status(self, value):
-        self._status = value
+    @step_name.setter
+    def step_name(self, value):
+        self._set_step_name_code(value)
+        self._step_name = value
+
+    def _set_step_name_code(self, step_name):
+        """
+        Set the step_name code based on the step_name string.
+        """
+        step_name_mapping = {
+            "CREATED": 0,
+            "INITIALIZED": 100,
+            "PROCESSING": 300,
+            "COMPLETED": 500,
+            "FAILED": 900,
+        }
+        if step_name not in step_name_mapping:
+            raise ValueError(f"Invalid step_name: {step_name}. Valid step_names are: {list(step_name_mapping.keys())}")
+        self._step_name_code = step_name_mapping[step_name]
 
     def set_action_id(self, action_id=None):
         self.action_id = action_id
@@ -148,15 +153,80 @@ class Action(ABC):
                 "sequence_number": self.sequence,
                 "created_dt": datetime.datetime.now(),
                 "updated_dt": datetime.datetime.now(),
-                "status": self.status,
-                "metadata": self.parameters,
+                "step_status": 'SUCCESS',
+                "step_name": self.step_name,
+                "metadata": json.dumps(self.input_params) if isinstance(self.input_params, dict) and self.input_params else None,
             }
             action_id = self.db_engine.insert(table=table, data=data_row, output_data=['action_id'])[0][0]
             self.set_action_id(action_id=action_id)
             # db_engine.update(table=table, data={"updated_dt": datetime.datetime.now()}, where={"action_id": self.action_id})
         return action_id
+
+    def update_action_id(self, step_name, step_status=None, error_code=None, error_message=None):
+        """
+        Update the action ID.
+        """
+        if self.action_id is not None:
+            table = AILoggingTables.AI_ACTION_LOG_TABLE
+            data_row = {
+                "step_name": step_name,
+                "step_status": step_status,
+                "error_code": error_code,
+                "error_message": error_message,
+                "error_timestamp": datetime.datetime.now() if error_message else None,
+                "updated_dt": datetime.datetime.now(),
+            }
+            self.db_engine.update(table=table, data=data_row, where={"action_id": self.action_id})
+    
+    def record_step(step_name):
+        """
+        Decorator to record the step of the action.
+        """
+        def record_decorator(func):
+            def wrapper(self, *args, **kwargs):
+                # Log the start of the step
+                if step_name != 'INITIALIZED':
+                    self.update_action_id(step_name=step_name, step_status='PROCESSING')
+                # Call the original function
+                result = func(self, *args, **kwargs)
+                # Log the end of the step
+                self.update_action_id(step_name=step_name, step_status='SUCCESS')
+                if step_name:
+                    self.step_name = step_name
+                return result
+            return wrapper
+        return record_decorator
     
     # endregion logging
+
+    # region Setup Methods
+    @record_step('INITIALIZED')
+    def initialize(self):
+        """
+        Initialize the action with the necessary parameters.
+        """
+        if self.parent_action is not None:
+            self.group_action_id = self.parent_action.action_id
+            self.parent_action = parent_action
+            self.group_action_id = parent_action.action_id
+            self.sequence = parent_action.sequence + 1
+            self.db_engine = parent_action.db_engine
+            self.ai_client = parent_action.ai_client
+        if self.db_engine is None:
+            self.setup_db_engine()
+        if self.ai_client is None:
+            self.setup_client()
+        self.setup_input_params()
+        self.start_action_id()
+        
+    def setup_input_params(self):
+        """
+        Setup the input parameters for the action. Sometimes it will be mined or pulled from parent actions.
+        """
+        # TODO: May want to add a list of parameters to pull from the parent action.
+        parent_action_params =  dict(**self.parent_action.input_params, **self.parent_action.output_params) if self.parent_action else {}
+        self.input_params = self.input_params if self.input_params is not None else {}
+        self.input_params = dict(**self.input_params, **parent_action_params)
 
     def setup_client(self):
         """
@@ -176,7 +246,7 @@ class Action(ABC):
         database = "MetaFort"
         # Server=localhost\SQLEXPRESS01;Database=master;Trusted_Connection=True;
         driver = "ODBC Driver 17 for SQL Server"
-        server = 'localhost\\SQLEXPRESS01' 
+        server = 'localhost\\SQLEXPRESS' 
 
         conn_str = (
             f"DRIVER={driver};"
@@ -188,6 +258,18 @@ class Action(ABC):
         db_engine.connect()
         self.db_engine = db_engine
 
+    @abstractmethod
+    def get_output_params_struct(self):
+        """
+        A representtation of the output coming from this step. (output_type, output_struct_str)
+        """
+        # This method should be overridden in subclasses to provide specific output parameters
+        return {
+            "output_type": GenAIUtils.valid_output_type("Text"),
+            "output_struct": None,
+        }
+
+    # region Action Methods
     @abstractmethod
     def engineer_prompt(self, user_prompt):
         """
@@ -206,7 +288,6 @@ class Action(ABC):
         # This method should be overridden in subclasses to provide specific messages
         return [
             {"role": "user", "content": self.engineered_prompt},
-            {"role": "assistant", "content": "{"}
         ]
     
     @abstractmethod
@@ -237,13 +318,15 @@ class Action(ABC):
         self.text_response = text_response
         return True
     
+    @record_step("COMPLETED")
     @abstractmethod
     def complete_action(self):
         """
-        Complete the action based of the values from the AI gnerated response.
+        Complete the action based of the values from the AI gnerated response. Fill in the output_params for the action.
         """
         # This method should be overridden in subclasses to provide specific completion actions
-        pass
+        self.is_completed = True
+        return self.output_params
 
     @abstractmethod
     def next_action(self):
@@ -251,7 +334,8 @@ class Action(ABC):
         Choose the next action based on the current action.
         """
         # This method should be overridden in subclasses to provide specific next actions
-        return None
+        self.child_action = [] if self.child_action is None else self.child_action
+        return self.child_action
     
     def get_tools(self):
         """
@@ -260,6 +344,7 @@ class Action(ABC):
         # This method should be overridden in subclasses to provide specific tools
         return None
     
+    @record_step("PROCESSING")
     def generate_action(self, retry_cnt=1, **kwargs):
         current_retry = 0
         # Set default values for parameters
@@ -295,6 +380,7 @@ class Action(ABC):
             log_error = None
             try:
                 if self.validate_output(text_response):
+                    self.text_response = text_response
                     break  # Exit the loop if JSON is valid
             # Only retry if the error is a validation error
             except ValidateAIResponseError as e:
@@ -351,7 +437,8 @@ class Action(ABC):
         """
         Run the action engine with the provided prompt.
         """
-        self.start_action_id()
+        if self._step_name_code < 100:
+            self.initialize()
         # TODO: add a pre-engineer prompt step to extract parameters and validate.
 
         # Engineer the prompt based of the actions function
@@ -369,7 +456,7 @@ class Action(ABC):
         # Complete Action
         self.complete_action()
         
-        # Log the results to the database
-        ls_next_steps = self.next_action()
-        for next_action in self.child_action:
+        for next_action in self.next_action():
             next_action.run(user_prompt=prompt)
+
+        # endregion Action Methods

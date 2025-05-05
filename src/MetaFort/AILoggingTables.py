@@ -14,13 +14,14 @@ class AILoggingTables():
       {"name": "group_action_id", "type": "Integer", "nullable": True, "metadata": {"description": "Name of the a set of actions that chained off each other. The value is the root action ID"}},
       {"name": "description", "type": "String", "nullable": True, "metadata": {"description": "Detailed description of the action's purpose"}},
       {"name": "sequence_number", "type": "Integer", "nullable": False, "metadata": {"description": "Order of execution within the parent action"}},
-      {"name": "created_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the sub-action was created"}},
-      {"name": "updated_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the sub-action was last updated"}},
-      {"name": "status", "type": "String", "nullable": False, "metadata": {"description": "Current status of the sub-action"}},
-      {"name": "error_code", "type": "String", "nullable": True, "metadata": {"description": "Error code if sub-action failed"}},
-      {"name": "error_message", "type": "String", "nullable": True, "metadata": {"description": "Detailed error message if sub-action failed"}},
-      {"name": "error_timestamp", "type": "Timestamp", "nullable": True, "metadata": {"description": "When the error occurred at sub-action level"}},
-      {"name": "metadata", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field for any additional sub-action metadata"}}
+      {"name": "created_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the action was created"}},
+      {"name": "updated_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the action was last updated"}},
+      {"name": "step_name", "type": "String", "nullable": False, "metadata": {"description": "Current step of the action the process is on."}},
+      {"name": "step_status", "type": "String", "nullable": False, "metadata": {"description": "Current status of the action"}},
+      {"name": "error_code", "type": "String", "nullable": True, "metadata": {"description": "Error code if action failed"}},
+      {"name": "error_message", "type": "String", "nullable": True, "metadata": {"description": "Detailed error message if action failed"}},
+      {"name": "error_timestamp", "type": "Timestamp", "nullable": True, "metadata": {"description": "When the error occurred at action level"}},
+      {"name": "metadata", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field for any additional action metadata"}}
     ]
   },
   AI_REQUEST_LOG_TABLE: {

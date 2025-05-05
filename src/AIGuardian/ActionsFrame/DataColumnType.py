@@ -7,12 +7,12 @@ from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from ...DataCreator.ColGenerators import *
 
-@Action.register("DataColumnRefiner")
-class DataColumnRefiner(Action):
+@Action.register("DataColumnType")
+class DataColumnType(Action):
 
     def __init__(self, input_params=None):
         self.input_params = input_params
-        super().__init__(input_params=input_params)
+        super().__init__(input_params=self.input_params)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
@@ -23,11 +23,11 @@ class DataColumnRefiner(Action):
     # region static variables
     @staticmethod
     def get_description():
-        return 'The action aims to create a data system structure relavent to the users requet. Complete with tables, columns, data types.'
+        return 'The action aims to what type of data is in the column for choosing the additional column metadata details'
     
     @staticmethod
     def get_action_type():
-        return 'DataColumnRefiner'
+        return 'DataColumnType'
     
     @staticmethod
     def get_action_version():
@@ -38,6 +38,7 @@ class DataColumnRefiner(Action):
         return """You are an expert data engineer, with an innate ability to build schemas for data architectures of business request/requirements."""
     
     # endregion static variables
+
     def get_output_params_struct(self):
         """
         A representtation of the output coming from this step. (output_type, output_struct_str)
@@ -45,64 +46,80 @@ class DataColumnRefiner(Action):
         # This method should be overridden in subclasses to provide specific output parameters
         return {
             "output_type": GenAIUtils.valid_output_type("JSON"),
-            "output_struct": self.column_type_JSON(),
+            "output_struct": {
+                "choice": str,
+                "reason": str
+            },
         }
 
-    def column_type_JSON(self):
-        """
-        Using the DataCreator column generators with the inpout parameters, generate a JSON representation of the column type.
-        """
-        col_type = self.input_params.get("column_type")
-        # TODO Implement code so the next 4 lines of code will acuatlly work.
-        # o_generator = ColGeneratorRegistry.get(col_type)
-        # if o_generator is None:
-        #     raise ValueError(f"Unknown column type: {col_type}")
-        # col_type_json = o_generator.get_metadata_json()
-        return {"name": "example_column", "type": "Integer", "nullable": True, "metadata": {"description": "Place the description of the column here.", "unique_fl": True, "default_value": None}}
-
-    def column_type_JSON_Example(self):
-        """
-        Using the DataCreator column generators with the inpout parameters, generate a JSON Example of the column type.
-        """
-        col_type = self.input_params.get("column_type")
-        # TODO Implement code so the next 4 lines of code will acuatlly work.
-        # o_generator = ColGeneratorRegistry.get(col_type)
-        # if o_generator is None:
-        #     raise ValueError(f"Unknown column type: {col_type}")
-        # col_type_json = o_generator.get_metadata_json()
-        return """Example 1:
-        Purpose: "This table is used to store user information."
-        Column Info: "user_id": "unique ID representing each user."
-        Output:
-        <JSON_Template>
-        {"name": "user_id", "type": "Integer", "nullable": False, 
-            "metadata": {"description": "unique ID representing each user.", 
-            "unique_fl": True,
-            "default_value": None}}
-        </JSON_Template>"""
-
     # region Action Methods
-    def engineer_prompt(self, user_prompt):
+    def engineer_prompt(self, user_prompt=None):
         """
         Generate a prompt for the action based on the user input.
         """
         # Alter input to try to format the response:
-        engineering_prompt = """Please take the following <column_information> to fill in JSON values and add additional metadata for the column.
-        <column_information>
-        Table Purpose: {{purpose}}
-        Column Info: "{{column_name}}": "{{description}}"
-        </column_information>
-        Please provide the response in a JSON format like the <JSON_Template> below. There are examples below at <Examples>.
-        <JSON_Template>
-        """+ json.dumps(self.column_type_JSON()) +"""
-        </JSON_Template>
+        engineering_prompt = """Please take the following <column_information> to choose what type of column a column most likely is.
+<column_information>
+Table Purpose: {{purpose}}
+Column Info: "{{column_name}}": "{{description}}"
+</column_information>
 
-        <Examples>
-        """+self.column_type_JSON_Example()+"""
-        </Examples>"""
+Choose one column_type from this list <choices> below, structure as column_type: description of what qualifies a column as that type.
+<choices>
+Unique_Identifier: A unique identifier for each record, typically a primary key.
+First_Name: A column that stores the first name of a person.
+Last_Name: A column that stores the last name of a person.
+City: A column that stores the name of a city.
+Email: A column that stores email addresses, often used for contact information.
+Categorical: a column that represents a category or type, often with a limited set of values.
+Integer: A column that stores whole numbers, often used for counts or identifiers.
+Date: A column that stores date values, typically representing a specific point in time.
+Boolean: A column that stores true/false values, often used for flags or binary states.
+Text: A column that stores free-form text or descriptions.
+Numeric: A column that stores decimal or floating-point numbers, often used for measurements or financial data.
+</choices>
+"""+ f"Additional User Info: {user_prompt}" if user_prompt else ""+
+"""
+Respond in JSON format like this:
+{{
+    "choice": "selected_option",
+    "reason": "brief explanation"
+}}
+
+<Examples>
+Example 1:
+<column_information>
+Table Purpose: Stores information about gym members.
+Column Info: "member_name": "The first name of the gym member."
+</column_information>
+Output:
+<JSON_Template>
+{{
+    "choice": "First_Name",
+    "reason": "This represents the first name of a person, which is a common attribute in member records."
+}}
+</JSON_Template>
+
+Example 2:
+<column_information>
+Table Purpose: Stores information about gym members.
+Column Info: "subscription": "The type of subscription the member has."
+</column_information>
+Output:
+<JSON_Template>
+{{
+    "choice": "Categorical",
+    "reason": "There is a finite number of options for memberships at a gym."
+}}
+</JSON_Template>
+</Examples>"""
         # Alter the prompt to include the JSON template:
         self.user_prompt = user_prompt
-        self.engineered_prompt = GenAIUtils.prompt_dict_substitute(engineering_prompt, **self.input_params)
+        # list out subsitution keys allowed/expected for the prompt
+        sub_keys = ["purpose", "column_name", "description"]
+        subs_vals = {key: val for key, val in self.input_params.items() if key in sub_keys}
+        # replace the keys in the prompt with the values from the input_params
+        self.engineered_prompt = GenAIUtils.prompt_dict_substitute(engineering_prompt, self.input_params)
         return self.engineered_prompt
     
     def get_messages(self):
@@ -129,13 +146,14 @@ class DataColumnRefiner(Action):
         Clean the output of the action.
         """
         return GenAIUtils.hygiene_to_json(text_response)
-
+    
     def validate_output(self, text_response):
         """
         Validate the output of the action.
         """
         return GenAIUtils.validate_json(text_response)
     
+    @Action.record_step("COMPLETED")
     def complete_action(self):
         """
         Complete the action based of the values from the AI gnerated response.

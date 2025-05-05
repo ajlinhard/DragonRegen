@@ -36,7 +36,6 @@ class ColGenerator(ABC):
                     return supported(name, dataType, nullalbe, metadata, **kwargs)
         raise ValueError(f"No suitable column generator found for {dataType} with nullable={nullalbe} and metadata={metadata}.")
 
-
     @classmethod
     def replicate(cls, o_field:StructField):
         """
