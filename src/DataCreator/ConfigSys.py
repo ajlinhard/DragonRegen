@@ -19,6 +19,6 @@ class ConfigSys():
     
     def data_path(self):
         project_dir = os.getcwd()
-        data_project_root = os.path.abspath(os.path.join(project_dir, "..","gitData"))
+        data_project_root = os.path.abspath(os.path.join(project_dir, "..", "..","gitData"))
         return self.get_config('ROOT_DATA_PATH', data_project_root)
             

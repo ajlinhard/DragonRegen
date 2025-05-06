@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from pyspark.sql.types import *
 from ..DataGenerators.PyData import PyData
+from ..ColGenerators.ColGenRegistry import ColGenRegistry
 
 class ColGenerator(ABC):
     """
@@ -23,10 +24,18 @@ class ColGenerator(ABC):
     @classmethod
     @abstractmethod
     def create(cls, name:str, dataType:DataType=StringType(), nullalbe:bool=True, metadata:dict=None, **kwargs):
+        print(f"==> Column Name:{name}")
+        # Check if the column type was specified in the metadata.
+        col_type = metadata.get('col_type', None)
+        if col_type is not None:
+            # Check the col_type in the ColGenRegistry
+            col_cls = ColGenRegistry.get_col_generator(col_type)
+            if col_cls is not None:
+                return col_cls(name, dataType, nullalbe, metadata, **kwargs)
+        # If not registered or not specified in the metadata, use the base class to guess.
         subclasses = cls.__subclasses__()
         ls_deprioritize = ["ColBasic"]
         ds_deprioritzie = {"ColBasic": 999, "StringBasic":10}
-        print(f"==> Column Name:{name}")
         # for subclass in sorted(subclasses, key=lambda x: x.__name__ if x.__name__ not in ls_deprioritize else 'zzzzzz'):
         for subclass in sorted(subclasses, key=lambda x: 0 if x.__name__ not in ds_deprioritzie.keys() else ds_deprioritzie[x.__name__]):
             if hasattr(subclass, 'supports_requirements') :
@@ -137,7 +146,7 @@ class ColGenerator(ABC):
             return PyData.random_booleans(i_row_count, null_ratio)
         elif isinstance(self.dataType, DateType):
             return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="day", null_ratio=null_ratio)
-        elif isinstance(self.dataType, TimestampNTZType):
+        elif isinstance(self.dataType, TimestampNTZType) or isinstance(self.dataType, TimestampType):
             return PyData.random_dates(i_row_count, "2020-01-01", "2023-12-31", granualarity="second", null_ratio=null_ratio)
         raise ValueError(f"Unsupported data type: {self.dataType}")
 

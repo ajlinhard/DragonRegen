@@ -27,10 +27,10 @@ class SchemaGenerator(ABC):
                 if "name" not in column.keys() or "type" not in column.keys():
                     raise ValueError(f"Column for table key: {table_name} should have 'name' and 'type' keys, but was {column}")
                 column["dataType"] = SchemaGenerator.validate_dataType(column.pop("type"))
-                if 'metadata' in column.keys():
-                    column['metadata'] = {"description": column.pop("metadata", "")} if type(column['metadata']) is str else column['metadata']
+                # if 'metadata' in column.keys():
+                #     column['metadata'] = {"description": column.pop("metadata", "")} if type(column['metadata']) is str else column['metadata']
                 spark_columns.append(StructField(**column))
-            table_schema = {table_name: StructType(spark_columns)}
+            table_schema[table_name] = StructType(spark_columns)
         return table_schema
     
     @staticmethod
@@ -90,7 +90,7 @@ class SchemaGenerator(ABC):
             # "Map": MapType(keyType, valueType, valueContainsNull),
             # "Struct": StructType(fields),
             # "StructField": StructField(name, dataType, nullable),
-            # "Decimal": DecimalType(precision, scale),
+            "Decimal": FloatType(), #DecimalType(precision, scale),
             "Null": NullType(),
             # "CalendarInterval": CalendarIntervalType(),
             "YearMonthInterval": YearMonthIntervalType(),
