@@ -2,7 +2,9 @@
 from pyspark.sql.types import *
 from ..DataGenerators.PyData import PyData
 from .ColGenerator import ColGenerator
+from ..ColGenerators.ColGenRegistry import ColGenResistry
 
+@ColGenResistry.add_registry("StringBasic")
 class StringBasic(ColGenerator):
     """
     Abstract base class for generating columns in a DataFrame.
@@ -83,6 +85,52 @@ class StringBasic(ColGenerator):
         ColGenerator: An instance of the column generator.
         """
         return cls(o_field.name, o_field.dataType, o_field.nullable, o_field.metadata)
+    
+     
+     # region static variables for AI Guardian
+    @staticmethod
+    def get_description() -> str:
+        """
+        Get the description of the column generator.
+
+        Returns:
+        str: Description of the column generator.
+        """
+        return "This is a basic string column generator that can be used to generate a column of strings with a specified length and format. It is not intended for free text or complex string generation."
+    
+    @staticmethod
+    def get_metadata_json() -> dict:
+        """
+        Get the metadata JSON for the column generator.
+
+        Returns:
+        dict: Metadata JSON for the column generator.
+        """
+        return {
+                "description": "Place the description of the column here.",
+                "unique_fl": True,
+                "default_value": None
+            }
+    
+    @staticmethod
+    def get_examples() -> str:
+        """
+        Get the examples for the column generator.
+
+        Returns:
+        str: Examples for the column generator.
+        """
+        return """Example 1:
+        Purpose: "This table is used to store user information."
+        Column Info: "user_id": "unique ID representing each user."
+        Output:
+        <JSON_Template>
+        {"name": "user_id", "type": "Integer", "nullable": False, 
+            "metadata": {"description": "unique ID representing each user.", 
+            "unique_fl": True,
+            "default_value": None}}
+        </JSON_Template>"""
+    # endregion static variables for AI Guardian
 
     def generate_column(self, i_row_count: int) -> list:
         """

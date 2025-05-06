@@ -2,7 +2,9 @@
 from pyspark.sql.types import *
 from .Categorical import Categorical
 from ..DataGenerators import PyData
+from ..ColGenerators.ColGenRegistry import ColGenResistry
 
+@ColGenResistry.add_registry("CategoricalProfile")
 class CategoricalProfile(Categorical):
 
     @classmethod
@@ -26,6 +28,51 @@ class CategoricalProfile(Categorical):
             return cls
         print('Nothing found')
         return None
+     
+     # region static variables for AI Guardian
+    @staticmethod
+    def get_description() -> str:
+        """
+        Get the description of the column generator.
+
+        Returns:
+        str: Description of the column generator.
+        """
+        return "a column that represents a category or type, often with a limited set of values, but with a statistical profile of the values."
+    
+    @staticmethod
+    def get_metadata_json() -> dict:
+        """
+        Get the metadata JSON for the column generator.
+
+        Returns:
+        dict: Metadata JSON for the column generator.
+        """
+        return {
+                "description": "Place the description of the column here.",
+                "unique_fl": True,
+                "default_value": None
+            }
+    
+    @staticmethod
+    def get_examples() -> str:
+        """
+        Get the examples for the column generator.
+
+        Returns:
+        str: Examples for the column generator.
+        """
+        return """Example 1:
+        Purpose: "This table is used to store user information."
+        Column Info: "user_id": "unique ID representing each user."
+        Output:
+        <JSON_Template>
+        {"name": "user_id", "type": "Integer", "nullable": False, 
+            "metadata": {"description": "unique ID representing each user.", 
+            "unique_fl": True,
+            "default_value": None}}
+        </JSON_Template>"""
+    # endregion static variables for AI Guardian
 
     def generate_column(self, i_row_count: int) -> list:
         """

@@ -6,13 +6,14 @@ from ..ActionsFrame.Action import Action
 from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from ...DataCreator.ColGenerators import *
+from ...DataCreator.ColGenerators.ColGenRegistry import ColGenResistry
 
 @Action.register("DataColumnRefiner")
 class DataColumnRefiner(Action):
 
-    def __init__(self, input_params=None):
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
         self.input_params = input_params
-        super().__init__(input_params=input_params)
+        super().__init__(input_params=input_params, sequence_limit=sequence_limit, verbose=verbose, parent_action=parent_action)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
@@ -52,34 +53,34 @@ class DataColumnRefiner(Action):
         """
         Using the DataCreator column generators with the inpout parameters, generate a JSON representation of the column type.
         """
-        col_type = self.input_params.get("column_type")
+        col_type = self.input_params.get("col_type")
         # TODO Implement code so the next 4 lines of code will acuatlly work.
-        # o_generator = ColGeneratorRegistry.get(col_type)
-        # if o_generator is None:
-        #     raise ValueError(f"Unknown column type: {col_type}")
-        # col_type_json = o_generator.get_metadata_json()
-        return {"name": "example_column", "type": "Integer", "nullable": True, "metadata": {"description": "Place the description of the column here.", "unique_fl": True, "default_value": None}}
+        o_generator = ColGenResistry.get_col_generator(col_type)
+        if o_generator is None:
+            raise ValueError(f"Unknown column type: {col_type}")
+        col_type_json = o_generator.get_metadata_json()
+        return {"name": "example_column", "type": "Integer", "nullable": True, "metadata": col_type_json}
 
-    def column_type_JSON_Example(self):
+    def column_type_examples(self):
         """
         Using the DataCreator column generators with the inpout parameters, generate a JSON Example of the column type.
         """
-        col_type = self.input_params.get("column_type")
+        col_type = self.input_params.get("col_type")
         # TODO Implement code so the next 4 lines of code will acuatlly work.
-        # o_generator = ColGeneratorRegistry.get(col_type)
-        # if o_generator is None:
-        #     raise ValueError(f"Unknown column type: {col_type}")
-        # col_type_json = o_generator.get_metadata_json()
-        return """Example 1:
-        Purpose: "This table is used to store user information."
-        Column Info: "user_id": "unique ID representing each user."
-        Output:
-        <JSON_Template>
-        {"name": "user_id", "type": "Integer", "nullable": False, 
-            "metadata": {"description": "unique ID representing each user.", 
-            "unique_fl": True,
-            "default_value": None}}
-        </JSON_Template>"""
+        o_generator = ColGenResistry.get_col_generator(col_type)
+        if o_generator is None:
+            raise ValueError(f"Unknown column type: {col_type}")
+        return o_generator.get_examples()
+        # return """Example 1:
+        # Purpose: "This table is used to store user information."
+        # Column Info: "user_id": "unique ID representing each user."
+        # Output:
+        # <JSON_Template>
+        # {"name": "user_id", "type": "Integer", "nullable": False, 
+        #     "metadata": {"description": "unique ID representing each user.", 
+        #     "unique_fl": True,
+        #     "default_value": None}}
+        # </JSON_Template>"""
 
     # region Action Methods
     def engineer_prompt(self, user_prompt):
@@ -92,13 +93,14 @@ class DataColumnRefiner(Action):
         Table Purpose: {{purpose}}
         Column Info: "{{column_name}}": "{{description}}"
         </column_information>
-        Please provide the response in a JSON format like the <JSON_Template> below. There are examples below at <Examples>.
+        Please provide the response in a JSON format like the <JSON_Template> below. If the JSON value has (Optional) in the value you may or may not included.
+        There are examples below at <Examples>.
         <JSON_Template>
         """+ json.dumps(self.column_type_JSON()) +"""
         </JSON_Template>
 
         <Examples>
-        """+self.column_type_JSON_Example()+"""
+        """+self.column_type_examples()+"""
         </Examples>"""
         # Alter the prompt to include the JSON template:
         self.user_prompt = user_prompt

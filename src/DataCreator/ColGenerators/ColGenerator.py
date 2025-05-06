@@ -65,6 +65,54 @@ class ColGenerator(ABC):
         bool: True if the requirements are supported, False otherwise.
         """
         return None
+    
+    # region static variables for AI Guardian
+    @staticmethod
+    @abstractmethod
+    def get_description() -> str:
+        """
+        Get the description of the column generator.
+
+        Returns:
+        str: Description of the column generator.
+        """
+        return "Base class for column generators."
+    
+    @staticmethod
+    @abstractmethod
+    def get_metadata_json() -> dict:
+        """
+        Get the metadata JSON for the column generator.
+
+        Returns:
+        dict: Metadata JSON for the column generator.
+        """
+        return {
+                "description": "Place the description of the column here.",
+                "unique_fl": True,
+                "default_value": None
+            }
+    
+    @staticmethod
+    @abstractmethod
+    def get_examples() -> str:
+        """
+        Get the examples for the column generator.
+
+        Returns:
+        str: Examples for the column generator.
+        """
+        return """Example 1:
+        Purpose: "This table is used to store user information."
+        Column Info: "user_id": "unique ID representing each user."
+        Output:
+        <JSON_Template>
+        {"name": "user_id", "type": "Integer", "nullable": False, 
+            "metadata": {"description": "unique ID representing each user.", 
+            "unique_fl": True,
+            "default_value": None}}
+        </JSON_Template>"""
+    # endregion static variables for AI Guardian
 
     @abstractmethod
     def generate_column(self, i_row_count: int) -> list:

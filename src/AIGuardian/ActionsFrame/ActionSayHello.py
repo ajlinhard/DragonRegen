@@ -8,9 +8,9 @@ from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 @Action.register("ActionSayHello")
 class ActionSayHello(Action):
 
-    def __init__(self, input_params=None):
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
         self.input_params = input_params
-        super().__init__(input_params=input_params)
+        super().__init__(input_params=input_params, sequence_limit=sequence_limit, verbose=verbose, parent_action=parent_action)
         self.model_parameters = {"model": "claude-3-haiku-20240307",
             "max_tokens": 200,
             "temperature": 0.1,

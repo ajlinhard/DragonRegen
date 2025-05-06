@@ -207,11 +207,10 @@ class Action(ABC):
         """
         if self.parent_action is not None:
             self.group_action_id = self.parent_action.action_id
-            self.parent_action = parent_action
-            self.group_action_id = parent_action.action_id
-            self.sequence = parent_action.sequence + 1
-            self.db_engine = parent_action.db_engine
-            self.ai_client = parent_action.ai_client
+            self.group_action_id = self.parent_action.action_id
+            self.sequence = self.parent_action.sequence + 1
+            self.db_engine = self.parent_action.db_engine
+            self.ai_client = self.parent_action.ai_client
         if self.db_engine is None:
             self.setup_db_engine()
         if self.ai_client is None:
@@ -226,7 +225,7 @@ class Action(ABC):
         # TODO: May want to add a list of parameters to pull from the parent action.
         parent_action_params =  dict(**self.parent_action.input_params, **self.parent_action.output_params) if self.parent_action else {}
         self.input_params = self.input_params if self.input_params is not None else {}
-        self.input_params = dict(**self.input_params, **parent_action_params)
+        self.input_params = {**self.input_params, **parent_action_params}
 
     def setup_client(self):
         """
@@ -246,7 +245,7 @@ class Action(ABC):
         database = "MetaFort"
         # Server=localhost\SQLEXPRESS01;Database=master;Trusted_Connection=True;
         driver = "ODBC Driver 17 for SQL Server"
-        server = 'localhost\\SQLEXPRESS' 
+        server = 'localhost\\SQLEXPRESS01' 
 
         conn_str = (
             f"DRIVER={driver};"

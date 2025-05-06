@@ -6,13 +6,14 @@ from ..ActionsFrame.Action import Action
 from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from ...DataCreator.ColGenerators import *
+from ...DataCreator.ColGenerators.ColGenRegistry import ColGenResistry
 
 @Action.register("DataColumnType")
 class DataColumnType(Action):
 
-    def __init__(self, input_params=None):
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
         self.input_params = input_params
-        super().__init__(input_params=self.input_params)
+        super().__init__(input_params=input_params, sequence_limit=sequence_limit, verbose=verbose, parent_action=parent_action)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
@@ -66,25 +67,22 @@ Column Info: "{{column_name}}": "{{description}}"
 
 Choose one column_type from this list <choices> below, structure as column_type: description of what qualifies a column as that type.
 <choices>
+"""+ '\n'.join([str(key)+': '+str(val) for key, val in ColGenResistry.get_all_descriptions().items()])+"""
 Unique_Identifier: A unique identifier for each record, typically a primary key.
-First_Name: A column that stores the first name of a person.
-Last_Name: A column that stores the last name of a person.
 City: A column that stores the name of a city.
 Email: A column that stores email addresses, often used for contact information.
-Categorical: a column that represents a category or type, often with a limited set of values.
 Integer: A column that stores whole numbers, often used for counts or identifiers.
 Date: A column that stores date values, typically representing a specific point in time.
 Boolean: A column that stores true/false values, often used for flags or binary states.
 Text: A column that stores free-form text or descriptions.
 Numeric: A column that stores decimal or floating-point numbers, often used for measurements or financial data.
 </choices>
-"""+ f"Additional User Info: {user_prompt}" if user_prompt else ""+
-"""
+"""+ f"Additional User Info: {user_prompt}" if user_prompt else "" + """
 Respond in JSON format like this:
-{{
+{
     "choice": "selected_option",
     "reason": "brief explanation"
-}}
+}
 
 <Examples>
 Example 1:
@@ -94,10 +92,10 @@ Column Info: "member_name": "The first name of the gym member."
 </column_information>
 Output:
 <JSON_Template>
-{{
+{
     "choice": "First_Name",
     "reason": "This represents the first name of a person, which is a common attribute in member records."
-}}
+}
 </JSON_Template>
 
 Example 2:
@@ -119,7 +117,7 @@ Output:
         sub_keys = ["purpose", "column_name", "description"]
         subs_vals = {key: val for key, val in self.input_params.items() if key in sub_keys}
         # replace the keys in the prompt with the values from the input_params
-        self.engineered_prompt = GenAIUtils.prompt_dict_substitute(engineering_prompt, self.input_params)
+        self.engineered_prompt = GenAIUtils.prompt_dict_substitute(engineering_prompt, **self.input_params)
         return self.engineered_prompt
     
     def get_messages(self):
@@ -159,6 +157,7 @@ Output:
         Complete the action based of the values from the AI gnerated response.
         """
         self.output_params = json.loads(self.text_response)
+        self.output_params['col_type'] = self.output_params.pop('choice')
         # Check if the response is valid
         self.is_completed = True
         return self.output_params
