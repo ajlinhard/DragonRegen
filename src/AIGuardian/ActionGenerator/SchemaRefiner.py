@@ -97,6 +97,8 @@ class SchemaRefiner(ActionGenerator):
         """
         Run the code to generate schema refinement actions.
         """
+        if self._step_name_code < 100:
+            self.initialize()
         for action in self.geneterate_actions():
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)

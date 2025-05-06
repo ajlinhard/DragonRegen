@@ -1,0 +1,1094 @@
+{
+  "customers": {
+    "purpose": "Stores information about customers who request car insurance quotes",
+    "fields": [
+      {
+        "name": "customer_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for customer identification",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "first_name",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "customer's first name",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "StringFirstName"
+        }
+      },
+      {
+        "name": "last_name",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "customer's last name",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "StringLastName"
+        }
+      },
+      {
+        "name": "email",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "customer's email address for communication",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Email"
+        }
+      },
+      {
+        "name": "phone_number",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "customer's contact phone number",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "StringBasic"
+        }
+      },
+      {
+        "name": "date_of_birth",
+        "type": "Date",
+        "nullable": false,
+        "metadata": {
+          "description": "customer's date of birth for age calculation",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "address_line_1",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "first line of customer's address",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Text"
+        }
+      },
+      {
+        "name": "address_line_2",
+        "type": "String",
+        "nullable": true,
+        "metadata": {
+          "description": "second line of customer's address (optional)",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Text"
+        }
+      },
+      {
+        "name": "city",
+        "type": "String",
+        "nullable": true,
+        "metadata": {
+          "description": "customer's city of residence",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "City"
+        }
+      },
+      {
+        "name": "state",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Customer's state of residence, representing the U.S. state where the customer requesting car insurance quotes lives.",
+          "unique_fl": false,
+          "column_values": [
+            "AL",
+            "AK",
+            "AZ",
+            "AR",
+            "CA",
+            "CO",
+            "CT",
+            "DE",
+            "FL",
+            "GA",
+            "HI",
+            "ID",
+            "IL",
+            "IN",
+            "IA",
+            "KS",
+            "KY",
+            "LA",
+            "ME",
+            "MD",
+            "MA",
+            "MI",
+            "MN",
+            "MS",
+            "MO",
+            "MT",
+            "NE",
+            "NV",
+            "NH",
+            "NJ",
+            "NM",
+            "NY",
+            "NC",
+            "ND",
+            "OH",
+            "OK",
+            "OR",
+            "PA",
+            "RI",
+            "SC",
+            "SD",
+            "TN",
+            "TX",
+            "UT",
+            "VT",
+            "VA",
+            "WA",
+            "WV",
+            "WI",
+            "WY",
+            "DC"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "zip_code",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Customer's postal code used for location-based insurance quote calculations and regional risk assessment.",
+          "unique_fl": "False",
+          "column_values": [
+            "10001",
+            "90210",
+            "60601",
+            "02108",
+            "33101"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when customer record was created",
+          "unique_fl": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when customer record was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "vehicles": {
+    "purpose": "Stores information about vehicles to be insured",
+    "fields": [
+      {
+        "name": "vehicle_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for vehicle identification",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "customer_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "foreign key referencing customers table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "make",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Manufacturer of the vehicle to be insured. Identifies the company that produced the vehicle.",
+          "unique_fl": "False",
+          "column_values": [
+            "Toyota",
+            "Honda",
+            "Ford",
+            "Chevrolet",
+            "BMW",
+            "Mercedes-Benz",
+            "Audi",
+            "Nissan",
+            "Hyundai",
+            "Kia"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "model",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Model name of the vehicle to be insured. Represents the specific model designation of the vehicle.",
+          "unique_fl": "False",
+          "column_values": [
+            "Civic",
+            "Accord",
+            "Camry",
+            "Corolla",
+            "F-150",
+            "Silverado",
+            "CR-V",
+            "RAV4",
+            "Mustang",
+            "Explorer"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "year",
+        "type": "Integer",
+        "nullable": true,
+        "metadata": {
+          "description": "year the vehicle was manufactured",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Integer"
+        }
+      },
+      {
+        "name": "vin",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "vehicle identification number",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "mileage",
+        "type": "Integer",
+        "nullable": true,
+        "metadata": {
+          "description": "current mileage of the vehicle",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Integer"
+        }
+      },
+      {
+        "name": "primary_use",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Primary use of vehicle, indicating how the vehicle is primarily used by the insured party.",
+          "unique_fl": false,
+          "column_values": [
+            "commute",
+            "pleasure",
+            "business"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "ownership_status",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Indicates whether the insured vehicle is owned, leased, or financed by the policyholder.",
+          "unique_fl": false,
+          "column_values": [
+            "owned",
+            "leased",
+            "financed"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when vehicle record was created",
+          "unique_fl": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when vehicle record was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "drivers": {
+    "purpose": "Stores information about drivers to be covered by the insurance",
+    "fields": [
+      {
+        "name": "driver_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for driver identification",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "customer_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "Foreign key referencing customers table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "first_name",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "driver's first name",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "StringFirstName"
+        }
+      },
+      {
+        "name": "last_name",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "driver's last name",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "StringLastName"
+        }
+      },
+      {
+        "name": "license_number",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "driver's license number",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "license_state",
+        "type": "String",
+        "nullable": true,
+        "metadata": {
+          "description": "State where driver's license was issued. Identifies the U.S. state that issued the driver's license for insurance coverage purposes.",
+          "unique_fl": "False",
+          "column_values": [
+            "AL",
+            "AK",
+            "AZ",
+            "AR",
+            "CA",
+            "CO",
+            "CT",
+            "DE",
+            "FL",
+            "GA",
+            "HI",
+            "ID",
+            "IL",
+            "IN",
+            "IA",
+            "KS",
+            "KY",
+            "LA",
+            "ME",
+            "MD",
+            "MA",
+            "MI",
+            "MN",
+            "MS",
+            "MO",
+            "MT",
+            "NE",
+            "NV",
+            "NH",
+            "NJ",
+            "NM",
+            "NY",
+            "NC",
+            "ND",
+            "OH",
+            "OK",
+            "OR",
+            "PA",
+            "RI",
+            "SC",
+            "SD",
+            "TN",
+            "TX",
+            "UT",
+            "VT",
+            "VA",
+            "WA",
+            "WV",
+            "WI",
+            "WY",
+            "DC"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "date_of_birth",
+        "type": "Date",
+        "nullable": false,
+        "metadata": {
+          "description": "driver's date of birth",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "marital_status",
+        "type": "String",
+        "nullable": true,
+        "metadata": {
+          "description": "Driver's marital status, indicating whether the insured driver is single, married, divorced, widowed, etc.",
+          "unique_fl": false,
+          "column_values": [
+            "Single",
+            "Married",
+            "Divorced",
+            "Widowed",
+            "Separated",
+            "Domestic Partnership"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "years_licensed",
+        "type": "Integer",
+        "nullable": true,
+        "metadata": {
+          "description": "number of years driver has been licensed",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Integer"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when driver record was created",
+          "unique_fl": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when driver record was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "driving_history": {
+    "purpose": "Stores information about driving incidents for each driver",
+    "fields": [
+      {
+        "name": "history_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for driving history record",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "driver_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "foreign key referencing drivers table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "incident_type",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Type of driving incident that occurred, categorized as accident, violation, or claim.",
+          "unique_fl": false,
+          "column_values": [
+            "accident",
+            "violation",
+            "claim"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "incident_date",
+        "type": "Date",
+        "nullable": false,
+        "metadata": {
+          "description": "date when the incident occurred",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "description",
+        "type": "String",
+        "nullable": true,
+        "metadata": {
+          "description": "description of the incident",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Text"
+        }
+      },
+      {
+        "name": "at_fault",
+        "type": "Boolean",
+        "nullable": true,
+        "metadata": {
+          "description": "boolean indicating if driver was at fault (for accidents)",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Boolean"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when history record was created",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when history record was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "coverage_options": {
+    "purpose": "Stores available insurance coverage options",
+    "fields": [
+      {
+        "name": "coverage_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for coverage identification",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "coverage_type",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Type of insurance coverage offered, such as liability, collision, comprehensive, etc.",
+          "unique_fl": "True",
+          "column_values": [
+            "liability",
+            "collision",
+            "comprehensive",
+            "uninsured motorist",
+            "personal injury protection",
+            "medical payments",
+            "gap insurance",
+            "rental reimbursement",
+            "roadside assistance"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "description",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "detailed description of the coverage",
+          "col_type": "Text"
+        }
+      },
+      {
+        "name": "is_active",
+        "type": "Boolean",
+        "nullable": false,
+        "metadata": {
+          "description": "boolean indicating if this coverage option is currently offered",
+          "unique_fl": false,
+          "default_value": true,
+          "col_type": "Boolean"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when coverage option was created",
+          "unique_fl": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when coverage option was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "quotes": {
+    "purpose": "Stores insurance quotes generated for customers",
+    "fields": [
+      {
+        "name": "quote_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for quote identification",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "customer_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "Foreign key referencing customers table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "quote_number",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "unique reference number for the quote",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "total_premium",
+        "type": "Decimal",
+        "nullable": false,
+        "metadata": {
+          "description": "total premium amount for the quote",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Numeric"
+        }
+      },
+      {
+        "name": "effective_date",
+        "type": "Date",
+        "nullable": true,
+        "metadata": {
+          "description": "proposed start date for the insurance policy",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "expiration_date",
+        "type": "Date",
+        "nullable": true,
+        "metadata": {
+          "description": "proposed end date for the insurance policy",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "status",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Status of the quote (draft, submitted, accepted, declined). Indicates the current state of the insurance quote in the sales process.",
+          "unique_fl": false,
+          "column_values": [
+            "draft",
+            "submitted",
+            "accepted",
+            "declined"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when quote was created",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when quote was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "quote_coverages": {
+    "purpose": "Junction table linking quotes to selected coverage options with specific details",
+    "fields": [
+      {
+        "name": "quote_coverage_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for quote coverage relationship",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "quote_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "Foreign key referencing quotes table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "coverage_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "Foreign key referencing coverage_options table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "vehicle_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "Foreign key referencing vehicles table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "coverage_limit",
+        "type": "String",
+        "nullable": true,
+        "metadata": {
+          "description": "selected limit for this coverage",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Numeric"
+        }
+      },
+      {
+        "name": "deductible",
+        "type": "Decimal",
+        "nullable": true,
+        "metadata": {
+          "description": "selected deductible amount for this coverage",
+          "col_type": "Numeric"
+        }
+      },
+      {
+        "name": "premium",
+        "type": "Decimal",
+        "nullable": true,
+        "metadata": {
+          "description": "premium amount for this specific coverage",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Numeric"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when quote coverage record was created",
+          "unique_fl": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when quote coverage record was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "discount_types": {
+    "purpose": "Stores types of discounts available for insurance quotes",
+    "fields": [
+      {
+        "name": "discount_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for discount type identification",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "discount_name",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "Name of the discount (multi-car, good student, etc.) available for insurance quotes",
+          "unique_fl": "True",
+          "column_values": [
+            "multi-car",
+            "good student",
+            "safe driver",
+            "homeowner",
+            "loyalty",
+            "paperless",
+            "automatic payment",
+            "senior",
+            "military",
+            "professional"
+          ],
+          "col_type": "Categorical"
+        }
+      },
+      {
+        "name": "description",
+        "type": "String",
+        "nullable": false,
+        "metadata": {
+          "description": "detailed description of the discount",
+          "col_type": "Text"
+        }
+      },
+      {
+        "name": "discount_percentage",
+        "type": "Float",
+        "nullable": false,
+        "metadata": {
+          "description": "standard percentage value of the discount",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Numeric"
+        }
+      },
+      {
+        "name": "is_active",
+        "type": "Boolean",
+        "nullable": false,
+        "metadata": {
+          "description": "boolean indicating if this discount is currently offered",
+          "unique_fl": false,
+          "default_value": false,
+          "col_type": "Boolean"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when discount type was created",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when discount type was last updated",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Date"
+        }
+      }
+    ]
+  },
+  "quote_discounts": {
+    "purpose": "Junction table linking quotes to applied discounts",
+    "fields": [
+      {
+        "name": "quote_discount_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "unique ID, primary key for quote discount relationship",
+          "unique_fl": true,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "quote_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "foreign key referencing quotes table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "discount_id",
+        "type": "Integer",
+        "nullable": false,
+        "metadata": {
+          "description": "Foreign key referencing discount_types table",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Unique_Identifier"
+        }
+      },
+      {
+        "name": "discount_amount",
+        "type": "Decimal",
+        "nullable": false,
+        "metadata": {
+          "description": "actual amount or percentage applied for this quote",
+          "unique_fl": false,
+          "default_value": null,
+          "col_type": "Numeric"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "Timestamp",
+        "nullable": false,
+        "metadata": {
+          "description": "timestamp when quote discount record was created",
+          "unique_fl": false,
+          "default_value": "CURRENT_TIMESTAMP",
+          "col_type": "Date"
+        }
+      },
+      {
+        "name": "updated_at",
+        "type": "Timestamp",
+        "nullable": true,
+        "metadata": {
+          "description": "timestamp when quote discount record was last updated",
+          "col_type": "Date"
+        }
+      }
+    ]
+  }
+}

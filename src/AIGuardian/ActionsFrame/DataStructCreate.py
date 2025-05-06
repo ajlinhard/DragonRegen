@@ -9,9 +9,8 @@ from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 @Action.register("DataStructCreate")
 class DataStructCreate(Action):
 
-    def __init__(self, input_params=None):
-        self.input_params = input_params
-        super().__init__(parameters=parameters)
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
+        super().__init__(input_params, sequence_limit, verbose, parent_action)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
@@ -45,9 +44,24 @@ class DataStructCreate(Action):
         # This method should be overridden in subclasses to provide specific output parameters
         return {
             "output_type": GenAIUtils.valid_output_type("JSON"),
-            "output_struct": ,
+            "output_struct": {"table_name_1": {
+                    "purpose": "short description of tables usage in the architecture",
+                    "fields":{"column_name_1": "unique ID, short description of column",
+                     "column_name_2": "short description of column",
+                     "column_name_3": "short description of column",
+                    }},
+                "table_name_2": {
+                    "purpose": "short description of tables usage in the architecture",
+                    "fields":
+                    {"column_name_1": "unique ID, short description of column",
+                     "column_name_2": "short description of column",
+                     "column_name_3": "short description of column",
+                     "column_name_4": "short description of column",
+                    }}
+                }
         }
 
+    # region Action Methods
     def engineer_prompt(self, user_prompt):
         """
         Generate a prompt for the action based on the user input.
@@ -110,31 +124,16 @@ class DataStructCreate(Action):
         """
         Validate the output of the action.
         """
-        try:
-            json.loads(text_response)
-            self.text_response = text_response
-            return True
-        except json.JSONDecodeError as e:
-            # Get error position
-            pos = e.pos
-            # Calculate start and end positions for context
-            start = max(0, pos - 10)
-            end = min(len(text_response), pos + 10)
-            # Extract the context around the error
-            context = text_response[start:end]
-            new_error_msg = f"Error message: {str(e)}" + \
-                f"Error position: line {e.lineno}, column {e.colno}" + \
-                f"Error Line Context: {context}" + \
-                f"Error document: {e.doc}"
-            raise ValidateAIResponseError(new_error_msg)
-        return False
+        return GenAIUtils.validate_json(text_response)
     
+    @Action.record_step("COMPLETED")
     def complete_action(self):
         """
         Complete the action based of the values from the AI gnerated response.
         """
-        # This method should be overridden in subclasses to provide specific completion actions
-        return self.action_id
+        self.output_params = json.loads(self.text_response)
+        self.is_completed = True
+        return self.output_params
 
     def next_action(self):
         """
@@ -155,3 +154,6 @@ class DataStructCreate(Action):
         Run the action with the given user prompt.
         """
         super().run(user_prompt)
+
+    # endregion Action Methods
+    
