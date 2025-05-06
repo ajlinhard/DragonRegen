@@ -1,5 +1,5 @@
 
-class ColGenResistry():
+class ColGenRegistry():
     """
     Registry for column generators.
     """
@@ -27,4 +27,4 @@ class ColGenResistry():
         """
         Get all descriptions of the column generators.
         """
-        return {col_type: generator.get_description() for col_type, generator in ColGenResistry._registry.items()}
+        return {col_type: generator.get_description() for col_type, generator in ColGenRegistry._registry.items()}

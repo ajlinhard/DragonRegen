@@ -1,7 +1,5 @@
 import json
 from ..ActionsFrame.Action import Action
-from ..ActionGenerator.ColumnRefiner import ColumnRefiner
-
 
 class ActionGenerator(Action):
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
@@ -76,7 +74,7 @@ class ActionGenerator(Action):
         self.text_response = text_response
         return True
     
-    @record_step("COMPLETED")
+    @Action.record_step("COMPLETED")
     def complete_action(self):
         """
         Complete the action based of the values from the AI gnerated response. Fill in the output_params for the action.

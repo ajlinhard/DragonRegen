@@ -5,9 +5,8 @@ from ..ActionGenerator.ColumnRefiner import ColumnRefiner
 
 
 class SchemaRefiner(ActionGenerator):
-    def __init__(self, input_params, schema):
-        self.schema = schema
-        super().__init__(input_params)
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
+        super().__init__(input_params, sequence_limit, verbose, parent_action)
 
     # region static variables
     @staticmethod
@@ -33,28 +32,28 @@ class SchemaRefiner(ActionGenerator):
         ls_table_keys = ['purpose', 'fields']
         ls_fields_keys = ['name', 'description', 'data_type']
         # iterate over each table, which is reprented by each key in the json_dict
-        for key, val in json_dict.items():
-            # confirm the value is a dictionary
-            if isinstance(val, dict):
-                # Check the val dictionary has the fields and purpose keys
-                st_overlap = set(val.keys()) & set(ls_table_keys)
-                if len(st_overlap) == len(ls_table_keys):
-                    # Check each field has the minimum key set
-                    for fields_val in val['fields'].values():
-                        if isinstance(fields_val, dict):
-                            st_overlap = set(fields_val.keys()) & set(ls_fields_keys)
-                            if len(st_overlap) != len(ls_fields_keys):
-                                raise ValueError(f"Invalid field schema for table {key}: {fields_val}")
-                        else:
-                            raise ValueError(f"Invalid field schema for table {key}: {fields_val}")
-                else:
-                    raise ValueError(f"Invalid minimum keys for table {key}: is missing {set(ls_table_keys) - st_overlap}")
-            else:
-                raise ValueError(f"Invalid structure for table {key} should be a dictionarym but is {type(val)}")
+        # for key, val in json_dict.items():
+        #     # confirm the value is a dictionary
+        #     if isinstance(val, dict):
+        #         # Check the val dictionary has the fields and purpose keys
+        #         st_overlap = set(val.keys()) & set(ls_table_keys)
+        #         if len(st_overlap) == len(ls_table_keys):
+        #             # Check each field has the minimum key set
+        #             for fields_val in val['fields'].values():
+        #                 if isinstance(fields_val, dict):
+        #                     st_overlap = set(fields_val.keys()) & set(ls_fields_keys)
+        #                     if len(st_overlap) != len(ls_fields_keys):
+        #                         raise ValueError(f"Invalid field schema for table {key}: {fields_val}")
+        #                 else:
+        #                     raise ValueError(f"Invalid field schema for table {key}: {fields_val}")
+        #         else:
+        #             raise ValueError(f"Invalid minimum keys for table {key}: is missing {set(ls_table_keys) - st_overlap}")
+        #     else:
+        #         raise ValueError(f"Invalid structure for table {key} should be a dictionarym but is {type(val)}")
 
-                for sub_key in val.keys():
-                    if sub_key not in ['purpose', 'columns']
-        return cls(schema=json_schema)
+        #         for sub_key in val.keys():
+        #             if sub_key not in ['purpose', 'columns']
+        # return cls(schema=json_schema)
     
     def get_output_params_struct(self):
         """
@@ -72,24 +71,25 @@ class SchemaRefiner(ActionGenerator):
         Generate actions based on the schema.
         """
         self.child_action = [] if self.child_action is None else self.child_action
-        for table_name, table_info in self.schema.items():
-            # Generate actions for each table and its fields
-            action_parameters = {
-                "table_name": table_name,
-                "purpose": table_info["purpose"],
-                "fields": table_info["fields"]
-            }
-            action = ColumnRefiner(action_parameters)
-            self.child_action.append(action)
-
+        for table_name, table_info in self.input_params.items():
+            if isinstance(table_info, dict):
+                # Generate actions for each table and its fields
+                action_parameters = {
+                    "table_name": table_name,
+                    "purpose": table_info["purpose"],
+                    "fields": table_info["fields"]
+                }
+                action = ColumnRefiner(action_parameters)
+                self.child_action.append(action)
         return self.child_action
     
+    @Action.record_step("COMPLETED")
     def complete_action(self):
         # Loop through the child actions and rebuild the schema.
         d_tables = {}
         for action in self.child_action:
             if isinstance(action, ColumnRefiner):
-                d_tables.append(action.output_params)
+                d_tables = {**d_tables, **action.output_params}
         self.output_params = d_tables
         return self.output_params
 
@@ -100,5 +100,7 @@ class SchemaRefiner(ActionGenerator):
         for action in self.geneterate_actions():
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)
+        # Combine processing into final output
+        self.complete_action()
 
     # region Action Methods

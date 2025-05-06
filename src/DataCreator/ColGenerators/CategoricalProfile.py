@@ -2,9 +2,9 @@
 from pyspark.sql.types import *
 from .Categorical import Categorical
 from ..DataGenerators import PyData
-from ..ColGenerators.ColGenRegistry import ColGenResistry
+from ..ColGenerators.ColGenRegistry import ColGenRegistry
 
-@ColGenResistry.add_registry("CategoricalProfile")
+@ColGenRegistry.add_registry("CategoricalProfile")
 class CategoricalProfile(Categorical):
 
     @classmethod

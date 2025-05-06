@@ -2,9 +2,9 @@
 from pyspark.sql.types import *
 from ..DataGenerators.PyData import PyData
 from .ColGenerator import ColGenerator
-from ..ColGenerators.ColGenRegistry import ColGenResistry
+from ..ColGenerators.ColGenRegistry import ColGenRegistry
 
-@ColGenResistry.add_registry("Categorical")
+@ColGenRegistry.add_registry("Categorical")
 class Categorical(ColGenerator):
     """
     A base class for generating categorical string columns.

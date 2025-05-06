@@ -6,7 +6,7 @@ from ..ActionsFrame.Action import Action
 from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from ...DataCreator.ColGenerators import *
-from ...DataCreator.ColGenerators.ColGenRegistry import ColGenResistry
+from ...DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
 
 @Action.register("DataColumnType")
 class DataColumnType(Action):
@@ -67,7 +67,7 @@ Column Info: "{{column_name}}": "{{description}}"
 
 Choose one column_type from this list <choices> below, structure as column_type: description of what qualifies a column as that type.
 <choices>
-"""+ '\n'.join([str(key)+': '+str(val) for key, val in ColGenResistry.get_all_descriptions().items()])+"""
+"""+ '\n'.join([str(key)+': '+str(val) for key, val in ColGenRegistry.get_all_descriptions().items()])+"""
 Unique_Identifier: A unique identifier for each record, typically a primary key.
 City: A column that stores the name of a city.
 Email: A column that stores email addresses, often used for contact information.
@@ -77,7 +77,6 @@ Boolean: A column that stores true/false values, often used for flags or binary 
 Text: A column that stores free-form text or descriptions.
 Numeric: A column that stores decimal or floating-point numbers, often used for measurements or financial data.
 </choices>
-"""+ f"Additional User Info: {user_prompt}" if user_prompt else "" + """
 Respond in JSON format like this:
 {
     "choice": "selected_option",

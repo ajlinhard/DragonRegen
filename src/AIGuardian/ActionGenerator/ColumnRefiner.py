@@ -1,13 +1,13 @@
 import json
 from ..ActionsFrame.Action import Action
 from ..ActionGenerator.ActionGenerator import ActionGenerator
-from ..ActionsFrame import DataColumnType, DataColumnRefiner
+from ..ActionsFrame.DataColumnType import DataColumnType
+from ..ActionsFrame.DataColumnRefiner import DataColumnRefiner
 from ..AIUtils.GenAIUtils import GenAIUtils
 
 class ColumnRefiner(ActionGenerator):
-    def __init__(self, input_params, schema):
-        self.schema = schema
-        super().__init__(input_params)
+    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_action=None):
+        super().__init__(input_params, sequence_limit, verbose, parent_action)
 
     # region static variables
     @staticmethod
@@ -42,7 +42,7 @@ class ColumnRefiner(ActionGenerator):
         self.child_action = [] if self.child_action is None else self.child_action
         table_name = self.input_params.get("table_name")
         table_purpose = self.input_params.get("purpose")
-        for col_name, col_description in self.input_params.items():
+        for col_name, col_description in self.input_params['fields'].items():
             # Generate actions for each table and its fields
             action_parameters = {
                 "table_name": table_name,
@@ -56,6 +56,7 @@ class ColumnRefiner(ActionGenerator):
             self.child_action.append(action_2)
         return self.child_action
     
+    @Action.record_step("COMPLETED")
     def complete_action(self):
         # Loop through the child actions and rebuild the schema.
         ls_fields = []
@@ -74,6 +75,7 @@ class ColumnRefiner(ActionGenerator):
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)
         # Loop through the child actions and rebuild the schema.
+        self.complete_action()
 
 
     # endregion Action Methods

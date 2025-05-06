@@ -4,9 +4,9 @@ from pyspark.sql.functions import *
 from .StringBasic import StringBasic
 from ..DataGenerators.FirstNameData import FirstNameData
 from ..DataGenerators.PyData import PyData
-from ..ColGenerators.ColGenRegistry import ColGenResistry
+from ..ColGenerators.ColGenRegistry import ColGenRegistry
 
-@ColGenResistry.add_registry("StringFirstName")
+@ColGenRegistry.add_registry("StringFirstName")
 class StringFirstName(StringBasic):
     """
     Generate a column of first names.

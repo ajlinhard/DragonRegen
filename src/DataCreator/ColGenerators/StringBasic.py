@@ -2,9 +2,9 @@
 from pyspark.sql.types import *
 from ..DataGenerators.PyData import PyData
 from .ColGenerator import ColGenerator
-from ..ColGenerators.ColGenRegistry import ColGenResistry
+from ..ColGenerators.ColGenRegistry import ColGenRegistry
 
-@ColGenResistry.add_registry("StringBasic")
+@ColGenRegistry.add_registry("StringBasic")
 class StringBasic(ColGenerator):
     """
     Abstract base class for generating columns in a DataFrame.

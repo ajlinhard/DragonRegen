@@ -6,7 +6,7 @@ from ..ActionsFrame.Action import Action
 from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from ...DataCreator.ColGenerators import *
-from ...DataCreator.ColGenerators.ColGenRegistry import ColGenResistry
+from ...DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
 
 @Action.register("DataColumnRefiner")
 class DataColumnRefiner(Action):
@@ -55,9 +55,10 @@ class DataColumnRefiner(Action):
         """
         col_type = self.input_params.get("col_type")
         # TODO Implement code so the next 4 lines of code will acuatlly work.
-        o_generator = ColGenResistry.get_col_generator(col_type)
+        o_generator = ColGenRegistry.get_col_generator(col_type)
         if o_generator is None:
-            raise ValueError(f"Unknown column type: {col_type}")
+            o_generator = ColGenRegistry.get_col_generator("ColBasic")
+            # raise ValueError(f"Unknown column type: {col_type}")
         col_type_json = o_generator.get_metadata_json()
         return {"name": "example_column", "type": "Integer", "nullable": True, "metadata": col_type_json}
 
@@ -67,20 +68,11 @@ class DataColumnRefiner(Action):
         """
         col_type = self.input_params.get("col_type")
         # TODO Implement code so the next 4 lines of code will acuatlly work.
-        o_generator = ColGenResistry.get_col_generator(col_type)
+        o_generator = ColGenRegistry.get_col_generator(col_type)
         if o_generator is None:
-            raise ValueError(f"Unknown column type: {col_type}")
+            o_generator = ColGenRegistry.get_col_generator("ColBasic")
+            # raise ValueError(f"Unknown column type: {col_type}")
         return o_generator.get_examples()
-        # return """Example 1:
-        # Purpose: "This table is used to store user information."
-        # Column Info: "user_id": "unique ID representing each user."
-        # Output:
-        # <JSON_Template>
-        # {"name": "user_id", "type": "Integer", "nullable": False, 
-        #     "metadata": {"description": "unique ID representing each user.", 
-        #     "unique_fl": True,
-        #     "default_value": None}}
-        # </JSON_Template>"""
 
     # region Action Methods
     def engineer_prompt(self, user_prompt):
@@ -88,7 +80,7 @@ class DataColumnRefiner(Action):
         Generate a prompt for the action based on the user input.
         """
         # Alter input to try to format the response:
-        engineering_prompt = """Please take the following <column_information> to fill in JSON values and add additional metadata for the column.
+        engineering_prompt = """Please take the following <column_information> to fill in JSON values and only use keys in "metadata" from <JSON_Template>.
         <column_information>
         Table Purpose: {{purpose}}
         Column Info: "{{column_name}}": "{{description}}"
@@ -138,12 +130,13 @@ class DataColumnRefiner(Action):
         """
         return GenAIUtils.validate_json(text_response)
     
+    @Action.record_step("COMPLETED")
     def complete_action(self):
         """
         Complete the action based of the values from the AI gnerated response.
         """
         self.output_params = json.loads(self.text_response)
-        self.output_params["metadata"]["col_type"] = self.parent_action.input_params.get("col_type", None)
+        self.output_params["metadata"]["col_type"] = self.input_params.get("col_type", None)
         # Check if the response is valid
         self.is_completed = True
         return self.output_params

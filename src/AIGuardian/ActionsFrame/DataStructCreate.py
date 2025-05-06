@@ -38,6 +38,16 @@ class DataStructCreate(Action):
     
     # endregion static variables
 
+    def get_output_params_struct(self):
+        """
+        A representtation of the output coming from this step. (output_type, output_struct_str)
+        """
+        # This method should be overridden in subclasses to provide specific output parameters
+        return {
+            "output_type": GenAIUtils.valid_output_type("JSON"),
+            "output_struct": ,
+        }
+
     def engineer_prompt(self, user_prompt):
         """
         Generate a prompt for the action based on the user input.
