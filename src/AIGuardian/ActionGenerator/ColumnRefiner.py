@@ -2,7 +2,7 @@ import json
 from ..ActionsFrame.Action import Action
 from ..ActionGenerator.ActionGenerator import ActionGenerator
 from ..ActionsFrame import DataColumnType, DataColumnRefiner
-
+from ..AIUtils.GenAIUtils import GenAIUtils
 
 class ColumnRefiner(ActionGenerator):
     def __init__(self, input_params, schema):
@@ -51,19 +51,30 @@ class ColumnRefiner(ActionGenerator):
                 "description": col_description,
             }
             action_1 = DataColumnType(action_parameters)
-            self.child_action.append(action)
+            self.child_action.append(action_1)
             action_2 = DataColumnRefiner(action_parameters, parent_action=action_1)
             self.child_action.append(action_2)
         return self.child_action
+    
+    def complete_action(self):
+        # Loop through the child actions and rebuild the schema.
+        ls_fields = []
+        for action in self.child_action:
+            if isinstance(action, DataColumnRefiner):
+                ls_fields.append(action.output_params)
+        self.output_params = {self.input_params.get("table_name"):
+                {"purpose": self.input_params.get("purpose"), "fields": ls_fields}}
+        return self.output_params
 
     def run(self, user_prompt):
         """
         Run the code to generate schema refinement actions.
         """
-        self.geneterate_actions()
-        for action in self.child_action:
+        for action in self.geneterate_actions():
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)
+        # Loop through the child actions and rebuild the schema.
+
 
     # endregion Action Methods
     

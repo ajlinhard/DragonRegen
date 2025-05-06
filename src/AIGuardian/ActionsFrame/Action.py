@@ -245,7 +245,7 @@ class Action(ABC):
         database = "MetaFort"
         # Server=localhost\SQLEXPRESS01;Database=master;Trusted_Connection=True;
         driver = "ODBC Driver 17 for SQL Server"
-        server = 'localhost\\SQLEXPRESS01' 
+        server = 'localhost\\SQLEXPRESS' 
 
         conn_str = (
             f"DRIVER={driver};"

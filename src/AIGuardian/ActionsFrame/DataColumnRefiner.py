@@ -143,6 +143,7 @@ class DataColumnRefiner(Action):
         Complete the action based of the values from the AI gnerated response.
         """
         self.output_params = json.loads(self.text_response)
+        self.output_params["metadata"]["col_type"] = self.parent_action.input_params.get("col_type", None)
         # Check if the response is valid
         self.is_completed = True
         return self.output_params

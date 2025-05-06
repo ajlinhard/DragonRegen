@@ -83,13 +83,21 @@ class SchemaRefiner(ActionGenerator):
             self.child_action.append(action)
 
         return self.child_action
+    
+    def complete_action(self):
+        # Loop through the child actions and rebuild the schema.
+        d_tables = {}
+        for action in self.child_action:
+            if isinstance(action, ColumnRefiner):
+                d_tables.append(action.output_params)
+        self.output_params = d_tables
+        return self.output_params
 
     def run(self, user_prompt):
         """
         Run the code to generate schema refinement actions.
         """
-        self.geneterate_actions()
-        for action in self.child_action:
+        for action in self.geneterate_actions():
             user_prompt = self.parent_action.user_prompt if self.parent_action else ""
             action.run(user_prompt)
 
