@@ -210,7 +210,7 @@ class Task(ABC):
             return wrapper
         return record_decorator
     
-    @record_step('submitted')
+    @record_step(TaskState.submitted)
     def submit_task(self):
         """
         Get the Task ID.
@@ -237,6 +237,7 @@ class Task(ABC):
     # endregion logging
 
     # region Setup Methods
+    @record_step(TaskState.working)
     def initialize(self):
         """
         Initialize the Task with the necessary parameters.
@@ -360,21 +361,20 @@ class Task(ABC):
         return self.output_params
 
     @abstractmethod
-    def next_task(self):
-        """
-        Choose the next Task based on the current Task.
-        """
-        # This method should be overridden in subclasses to provide specific next Tasks
-        self.child_task = [] if self.child_task is None else self.child_task
-        return self.child_task
-    
-    @abstractmethod
-    async def wait_on_dependency(self):
+    @record_step(TaskState.input_required)
+    async def wait_on_dependency(self, timeout=300):
         """
         Wait for the Task to complete before proceeding.
         """
         # This method should look at the completed topic for finished tasks or failed tasks.
-        pass
+        start_time = datetime.datetime.now()
+        while self.child_task and (datetime.datetime.now() - start_time).total_seconds() < timeout:
+            completed = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=10)
+            for topic_partition, messages in completed.items():
+                for message in messages:
+                    task_json = message.value.decode('utf-8')
+                    task_id = task_json.get("task_id")
+                    self.child_task.pop_item(task_id)
     
     @record_step("working")
     async def generate_task(self, retry_cnt=1, **kwargs):
@@ -465,12 +465,16 @@ class Task(ABC):
             #end while loop
         return message
     
-    async def run(self, user_prompt):
+    async def run(self, user_prompt=None):
         """
         Run the Task engine with the provided prompt.
         """
+        if self._task_state != TaskState.working:
+            self.initialize()
         # TODO: add a pre-engineer prompt step to extract parameters and validate.
         # Engineer the prompt based of the Tasks function
+        if user_prompt is None:
+            user_prompt = self.input_params.get("user_prompt", None)
         prompt = self.engineer_prompt(user_prompt)
 
         # TODO: add a post-engineer prompt step to extract parameters
@@ -485,7 +489,4 @@ class Task(ABC):
         # Complete Task
         self.complete_task()
         
-        for next_task in self.next_task():
-            next_task.run(user_prompt=prompt)
-
         # endregion Task Methods
