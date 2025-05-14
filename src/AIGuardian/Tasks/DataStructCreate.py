@@ -10,11 +10,12 @@ from a2a.types import (
 )
 
 from ..AIUtils.GenAIUtils import GenAIUtils
-from ..Tasks.Task import Task
-from ..Tasks.TaskExceptions import ValidateAIResponseError
+from .TaskRegistry import TaskRegistry
+from .Task import Task
+from .TaskExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 
-@Task.register("DataStructCreate")
+@TaskRegistry.register("DataStructCreate")
 class DataStructCreate(Task):
 
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):

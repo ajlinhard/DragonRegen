@@ -7,12 +7,13 @@ from a2a.types import (
     TaskState,
 )
 
-from ..Tasks.Task import Task
-from ..Tasks.TaskGenerator import TaskGenerator
-from ..Tasks.ColumnRefiner import ColumnRefiner
+from .Task import Task
+from .TaskGenerator import TaskGenerator
+from .ColumnRefiner import ColumnRefiner
 from ..AIUtils import GenAIUtils
+from .TaskRegistry import TaskRegistry
 
-
+@TaskRegistry.register("SchemaRefiner")
 class SchemaRefiner(TaskGenerator):
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
         super().__init__(input_params, sequence_limit, verbose, parent_task)

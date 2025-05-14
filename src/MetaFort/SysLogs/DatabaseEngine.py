@@ -35,6 +35,33 @@ class DatabaseEngine:
         self.verbose = verbose
         self.connection = None
         self.cursor = None
+
+    @classmethod
+    def default_builder(cls):
+        """Create a default DatabaseEngine instance
+        Returns:
+            DatabaseEngine: Default DatabaseEngine instance
+        """
+        # create database engine object and connection
+        database = "MetaFort"
+        driver = "ODBC Driver 17 for SQL Server"
+        server = 'localhost\\SQLEXPRESS' 
+
+        conn_str = (
+            f"DRIVER={driver};"
+            f"SERVER={server};"
+            f"DATABASE={database};"
+            f"Trusted_Connection=yes;"
+        )
+        # Non-trusted connection
+        # conn_str = 'Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=master;UID=sa;PWD=your_password;'
+        # Initialize DatabaseEngine
+        db_engine = cls(
+            connection_string=conn_str,
+            autocommit=True,
+            verbose=True
+        )
+        return db_engine
     
     def connect(self):
         """Connect to the database"""

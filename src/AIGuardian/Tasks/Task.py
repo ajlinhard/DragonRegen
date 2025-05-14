@@ -3,7 +3,7 @@ import datetime
 import json
 import uuid
 from dotenv import load_dotenv
-import anthropic
+from anthropic import AsyncAnthropic
 from a2a.types import (
     AgentAuthentication,
     AgentCapabilities,
@@ -20,11 +20,10 @@ from src.MetaFort.SysLogs.DatabaseEngine import DatabaseEngine
 from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
 class Task(ABC):
-    _registry = {}
 
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
         self.input_params = input_params
-        self.output_params = None
+        self.output_params = {}
         self.verbose = verbose
         # Task tree variables and identifiers
         self.task_id = uuid.uuid4().int
@@ -37,6 +36,7 @@ class Task(ABC):
         self.text_response = None
         self.parent_task = parent_task
         self.child_task = None
+        self.child_task_output_artifacts = {}
         # read-only properties
         self._name = self.__class__.__name__
         self._description = Task.get_description() # self.description 
@@ -55,41 +55,9 @@ class Task(ABC):
         ## Initialize the AI client
         self.ai_client = None
         self.db_engine = None
-
-    @classmethod
-    def register(cls, task_name):
-        def decorator(subclass):
-            cls._registry[task_name] = subclass
-            return subclass
-        return decorator
-    
-    @classmethod
-    def get_task(cls, task_name):
-        """
-        Get the Task class based on the Task name.
-        """
-        if task_name not in cls._registry:
-            raise ValueError(f"Task '{task_name}' is not registered.")
-        return cls._registry[task_name]
-
-    @classmethod
-    def build_from_json(cls, task_json, db_engine=None):
-        """
-        Build a Task from a JSON object.
-        """
-        task_name = task_json.get("task_name")
-        if task_name not in cls._registry:
-            raise ValueError(f"Task '{task_name}' is not registered.")
-        task_obj = cls._registry[task_name]()
-        task_obj.task_id = task_json.get("task_id")
-        task_obj.task_name = task_json.get("task_name")
-        task_obj.task_version = task_json.get("task_version")
-        task_obj.group_task_id = task_json.get("group_task_id")
-        task_obj.sequence = task_json.get("sequence_number")
-        task_obj.input_params = task_json.get("input_artifacts")
-        task_obj.db_engine = db_engine
-        task_obj.task_state = TaskState.submitted if task_json.get("insert_dt", None) else None
-
+        if self.parent_task is not None:
+            self.initialize()
+ 
     @classmethod
     def from_parent_task(cls, parent_task):
         """
@@ -237,7 +205,6 @@ class Task(ABC):
     # endregion logging
 
     # region Setup Methods
-    @record_step(TaskState.working)
     def initialize(self):
         """
         Initialize the Task with the necessary parameters.
@@ -268,27 +235,14 @@ class Task(ABC):
         Setup the AI client with the necessary parameters.
         """
         load_dotenv()
-        self.ai_client = anthropic.Anthropic()
+        self.ai_client = AsyncAnthropic()
 
     def setup_db_engine(self):
         """
         Setup the database engine for logging.
         """
-        
-        # create database engine object and connection
-        database = "MetaFort"
-        driver = "ODBC Driver 17 for SQL Server"
-        server = 'localhost\\SQLEXPRESS' 
-
-        conn_str = (
-            f"DRIVER={driver};"
-            f"SERVER={server};"
-            f"DATABASE={database};"
-            f"Trusted_Connection=yes;"
-        )
-        db_engine = DatabaseEngine(conn_str)
-        db_engine.connect()
-        self.db_engine = db_engine
+        self.db_engine = DatabaseEngine.default_builder()
+        self.db_engine.connect()
 
     @abstractmethod
     def get_output_params_struct(self):
@@ -358,6 +312,16 @@ class Task(ABC):
         """
         # This method should be overridden in subclasses to provide specific completion Tasks
         self.is_completed = True
+        self.db_engine.insert(
+            topic=AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
+            data={
+                "task_id": self.task_id,
+                "task_name": self.name,
+                "group_task_id": self.group_task_id,
+                "insert_dt": datetime.datetime.now().isoformat(),
+                "output_artifacts": json.dumps(self.output_params),
+            }
+        )
         return self.output_params
 
     @abstractmethod
@@ -369,12 +333,18 @@ class Task(ABC):
         # This method should look at the completed topic for finished tasks or failed tasks.
         start_time = datetime.datetime.now()
         while self.child_task and (datetime.datetime.now() - start_time).total_seconds() < timeout:
-            completed = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=10)
+            completed = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=20)
             for topic_partition, messages in completed.items():
                 for message in messages:
-                    task_json = message.value.decode('utf-8')
+                    if not isinstance(message.value, dict):
+                        task_json = json.loads(message.value.decode('utf-8'))
+                    else:
+                        task_json = message.value
                     task_id = task_json.get("task_id")
-                    self.child_task.pop_item(task_id)
+                    if task_id in self.child_task:
+                        self.child_task.remove(task_id)
+                        self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
+        
     
     @record_step("working")
     async def generate_task(self, retry_cnt=1, **kwargs):
@@ -392,13 +362,12 @@ class Task(ABC):
         message = None
         # subset kwargs to only include model keys
         create_params = {key: kwargs[key] for key in kwargs.keys() if key in create_func_params}
-        table_name = AILoggingTopics.AI_REQUEST_LOG_TABLE
+        table_name = AILoggingTopics.AI_REQUEST_LOG_TOPIC
         # Generate the JSON object using the AI client
         while(current_retry < retry_cnt):
             current_retry += 1
             # Send the request to the AI client
             request_timestamp = datetime.datetime.now()
-            print(f"create_params: {create_params}")
             message = await self.ai_client.messages.create(**create_params)
             response_timestamp = datetime.datetime.now()
             # Hygiene the output of the Task
@@ -433,7 +402,7 @@ class Task(ABC):
                 # Log the response to the database
                 data_row = {
                     "task_id": self.task_id,
-                    "insert_dt": datetime.datetime.now(),
+                    "insert_dt": datetime.datetime.now().isoformat(),
                     "status": "SUCCESS" if log_error is None else "FAILED",
                     "ai_service": "Anthropic",
                     "model": kwargs["model"],
@@ -449,12 +418,12 @@ class Task(ABC):
                                         "usage": vars(message.usage)}),
                     "input_tokens": message.usage.input_tokens,
                     "output_tokens": message.usage.output_tokens,
-                    "request_timestamp": request_timestamp,
-                    "response_timestamp": response_timestamp,
+                    "request_timestamp": request_timestamp.isoformat(),
+                    "response_timestamp": response_timestamp.isoformat(),
                     "duration_ms": duration_ms,
                     "error_code":  str(type(log_error)) if log_error else None, #log_error.__class__.__name__
                     "error_message": str(log_error) if log_error else None,
-                    "error_timestamp": datetime.datetime.now() if log_error else None,
+                    "error_timestamp": datetime.datetime.now().isoformat() if log_error else None,
                     "retry_cnt": current_retry-1,
                     "RAG_Embeding_Model": None,
                     "RAG_IDs": None,
@@ -469,7 +438,7 @@ class Task(ABC):
         """
         Run the Task engine with the provided prompt.
         """
-        if self._task_state != TaskState.working:
+        if self._task_state != TaskState.working or self.ai_client is None:
             self.initialize()
         # TODO: add a pre-engineer prompt step to extract parameters and validate.
         # Engineer the prompt based of the Tasks function
@@ -484,8 +453,11 @@ class Task(ABC):
         # 1. The AI API will be called with the prompt, Task settings
         # 2. Then use the validate_output method in the Task class.
         # 3. If the output is valid, then log the Task to the database.
-        result = self.generate_task()
+        result = await self.generate_task()
         self.response = result
+        # Wait on dependencies
+        if self.child_task:
+            await self.wait_on_dependency()
         # Complete Task
         self.complete_task()
         

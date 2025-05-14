@@ -3,6 +3,7 @@ import datetime
 import json
 from kafka import KafkaProducer, KafkaConsumer
 from typing import Dict, List, Optional, Any, Union
+from ...MetaFort.AILoggingTopics import AILoggingTopics
 
 class KafkaEngine():
     """Base class for database connection handling"""
@@ -38,6 +39,36 @@ class KafkaEngine():
         self.producer = None
         self.consumers = {}
     
+    @classmethod
+    def default_builder(cls, group_id: str = 'default') -> 'KafkaEngine':
+        """Create a default KafkaEngine instance
+        Returns:
+            KafkaEngine: Default KafkaEngine instance
+        """
+        # Initialize KafkaEngine
+        kafka_engine = cls(
+            connection_string='localhost:9092',
+        )
+
+        kafka_engine.producer = KafkaProducer(bootstrap_servers=['localhost:9092'], max_block_ms=5000)
+
+        # Create Consumers
+        kafka_engine.consumers[AILoggingTopics.AI_TASK_TOPIC] = KafkaConsumer(
+                AILoggingTopics.AI_TASK_TOPIC,
+                bootstrap_servers=['localhost:9092'],
+                group_id=group_id,
+                auto_offset_reset='latest')
+        kafka_engine.consumers[AILoggingTopics.AI_TASK_LOG_TOPIC] = KafkaConsumer(
+                AILoggingTopics.AI_TASK_LOG_TOPIC,
+                bootstrap_servers=['localhost:9092'],
+                group_id=group_id,
+                auto_offset_reset='latest')
+        kafka_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC] = KafkaConsumer(
+                AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
+                bootstrap_servers=['localhost:9092'],
+                group_id=group_id,
+                auto_offset_reset='latest')
+        return kafka_engine
 
     def has_producer(self, topic: str) -> bool:
         """Check if a producer for the given topic exists

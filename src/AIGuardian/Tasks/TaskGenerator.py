@@ -6,8 +6,11 @@ from a2a.types import (
     AgentSkill,
     TaskState,
 )
-from Tasks.Task import Task
+from .Task import Task
+from .TaskRegistry import TaskRegistry
+from ..AIUtils.GenAIUtils import GenAIUtils
 
+@TaskRegistry.register("TaskGenerator")
 class TaskGenerator(Task):
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
         super().__init__(input_params, sequence_limit, verbose, parent_task)
@@ -88,6 +91,20 @@ class TaskGenerator(Task):
         """
         # This method should be overridden in subclasses to provide specific completion tasks
         self.is_completed = True
+    
+    @Task.record_step(TaskState.input_required)
+    async def wait_on_dependency(self, timeout=300):
+        """
+        Wait for the Task to complete before proceeding.
+        """
+        await super().wait_on_dependency(timeout=timeout)
+
+    def get_tools(self):
+        """
+        Get the tools for this task class or utility classes for the AI to consider using.
+        """
+        # This method should be overridden in subclasses to provide specific tools
+        return []
 
     def geneterate_tasks(self):
         """

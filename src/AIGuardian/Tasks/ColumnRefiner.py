@@ -1,10 +1,20 @@
 import json
-from ..Tasks.Task import Task
-from ..Tasks.TaskGenerator import TaskGenerator
-from ..Tasks.DataColumnType import DataColumnType
-from ..Tasks.DataColumnRefiner import DataColumnRefiner
+from a2a.types import (
+    AgentAuthentication,
+    AgentCapabilities,
+    AgentCard,
+    AgentSkill,
+    TaskState,
+)
+
+from .Task import Task
+from .TaskRegistry import TaskRegistry
+from .TaskGenerator import TaskGenerator
+from .DataColumnType import DataColumnType
+from .DataColumnRefiner import DataColumnRefiner
 from ..AIUtils.GenAIUtils import GenAIUtils
 
+@TaskRegistry.register("ColumnRefiner")
 class ColumnRefiner(TaskGenerator):
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
         super().__init__(input_params, sequence_limit, verbose, parent_task)
@@ -50,13 +60,15 @@ class ColumnRefiner(TaskGenerator):
                 "column_name": col_name,
                 "description": col_description,
             }
-            task_1 = DataColumnType(task_parameters)
-            self.child_task.append(task_1)
+            task_1 = DataColumnType(task_parameters, parent_task=self)
+            task_1.submit_task()
+            self.child_task.append(task_1.task_id)
             task_2 = DataColumnRefiner(task_parameters, parent_task=task_1)
-            self.child_task.append(task_2)
+            task_2.submit_task()
+            self.child_task.append(task_2.task_id)
         return self.child_task
     
-    @Task.record_step("COMPLETED")
+    @Task.record_step(TaskState.completed)
     def complete_task(self):
         # Loop through the child tasks and rebuild the schema.
         ls_fields = []
@@ -65,7 +77,7 @@ class ColumnRefiner(TaskGenerator):
                 ls_fields.append(task.output_params)
         self.output_params = {self.input_params.get("table_name"):
                 {"purpose": self.input_params.get("purpose"), "fields": ls_fields}}
-        return self.output_params
+        return super().complete_task()
 
     async def run(self, user_prompt=None):
         """

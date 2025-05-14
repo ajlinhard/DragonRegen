@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 import datetime
 import json
 from .Task import Task
+from .TaskRegistry import TaskRegistry
 from .TaskExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
-@Task.register("TaskSayHello")
+@TaskRegistry.register("TaskSayHello")
 class TaskSayHello(Task):
 
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
@@ -94,7 +95,7 @@ class TaskSayHello(Task):
         Complete the task based of the values from the AI gnerated response.
         """
         # This method should be overridden in subclasses to provide specific completion tasks
-        return self.task_id
+        return super().complete_task()
 
     def next_task(self):
         """
@@ -121,4 +122,4 @@ class TaskSayHello(Task):
         """
         Run the task with the provided prompt.
         """
-        super().run(user_prompt)
+        await super().run(user_prompt)

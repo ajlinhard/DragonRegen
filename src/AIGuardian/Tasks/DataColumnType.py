@@ -10,13 +10,14 @@ from a2a.types import (
 )
 
 from ..AIUtils.GenAIUtils import GenAIUtils
-from ..Tasks.Task import Task
-from ..Tasks.TaskExceptions import ValidateAIResponseError
+from .Task import Task
+from .TaskRegistry import TaskRegistry
+from .TaskExceptions import ValidateAIResponseError
 from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from ...DataCreator.ColGenerators import *
 from ...DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
 
-@Task.register("DataColumnType")
+@TaskRegistry.register("DataColumnType")
 class DataColumnType(Task):
 
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
@@ -167,7 +168,14 @@ Output:
         self.output_params['col_type'] = self.output_params.pop('choice')
         # Check if the response is valid
         self.is_completed = True
-        return self.output_params
+        return super().complete_task()
+    
+    @Task.record_step(TaskState.input_required)
+    async def wait_on_dependency(self, timeout=300):
+        """
+        Wait for the Task to complete before proceeding.
+        """
+        super().wait_on_dependency(timeout=timeout)
 
     def get_tools(self):
         """
