@@ -1,6 +1,7 @@
 from a2a.types import (
     TaskState,
 )
+import json
 
 class TaskRegistry():
     _registry = {}
@@ -32,9 +33,11 @@ class TaskRegistry():
         task_obj = cls._registry[task_name]()
         task_obj.task_id = task_json.get("task_id")
         task_obj.task_name = task_json.get("task_name")
-        task_obj.task_version = task_json.get("task_version")
+        # task_obj.task_version = task_json.get("task_version")
         task_obj.group_task_id = task_json.get("group_task_id")
         task_obj.sequence = task_json.get("sequence_number")
-        task_obj.input_params = task_json.get("input_artifacts")
+        task_obj.input_params = json.loads(task_json.get("input_artifacts", '{}'))
         task_obj.db_engine = db_engine
         task_obj.task_state = TaskState.submitted if task_json.get("insert_dt", None) else None
+
+        return task_obj

@@ -26,8 +26,8 @@ class Task(ABC):
         self.output_params = {}
         self.verbose = verbose
         # Task tree variables and identifiers
-        self.task_id = uuid.uuid4().int
-        self.group_task_id = None
+        self.task_id = str(uuid.uuid4())
+        self.group_task_id = self.task_id 
         self.sequence = 0
         self.sequence_limit = sequence_limit
         self.user_prompt = None
@@ -40,7 +40,7 @@ class Task(ABC):
         # read-only properties
         self._name = self.__class__.__name__
         self._description = Task.get_description() # self.description 
-        self._Task_type = Task.get_task_type()
+        self._task_type = Task.get_task_type()
         self._task_version = Task.get_task_version()
         self._system_prompt = Task.get_system_prompt()
         self.model_parameters = {"max_tokens": 10000,
@@ -56,7 +56,10 @@ class Task(ABC):
         self.ai_client = None
         self.db_engine = None
         if self.parent_task is not None:
-            self.initialize()
+            self.group_task_id = self.parent_task.group_task_id
+            self.sequence = self.parent_task.sequence + 1
+            self.db_engine = self.parent_task.db_engine
+            self.ai_client = self.parent_task.ai_client
  
     @classmethod
     def from_parent_task(cls, parent_task):
@@ -103,8 +106,8 @@ class Task(ABC):
         # return self.__class__.get_description()
     
     @property
-    def Task_type(self):
-        return self._Task_type
+    def task_type(self):
+        return self._task_type
     
     @property
     def task_version(self):
@@ -118,6 +121,10 @@ class Task(ABC):
     def task_state(self, value):
         self._set_task_state_code(value)
         self._task_state = value
+
+    @task_version.setter
+    def task_state(self, value):
+        self._task_version = value
 
     def _set_task_state_code(self, task_state):
         """
@@ -209,12 +216,6 @@ class Task(ABC):
         """
         Initialize the Task with the necessary parameters.
         """
-        if self.parent_task is not None:
-            self.group_task_id = self.parent_task.task_id
-            self.group_task_id = self.parent_task.task_id
-            self.sequence = self.parent_task.sequence + 1
-            self.db_engine = self.parent_task.db_engine
-            self.ai_client = self.parent_task.ai_client
         if self.db_engine is None:
             self.setup_db_engine()
         if self.ai_client is None:
@@ -332,8 +333,12 @@ class Task(ABC):
         """
         # This method should look at the completed topic for finished tasks or failed tasks.
         start_time = datetime.datetime.now()
+        print(f"==> Waiting on {self.child_task} to complete.")
         while self.child_task and (datetime.datetime.now() - start_time).total_seconds() < timeout:
             completed = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=20)
+            completed_length = len(completed)
+            if completed_length > 0:
+                print(f"==> Found {len(completed)} completed tasks.")
             for topic_partition, messages in completed.items():
                 for message in messages:
                     if not isinstance(message.value, dict):
@@ -342,6 +347,7 @@ class Task(ABC):
                         task_json = message.value
                     task_id = task_json.get("task_id")
                     if task_id in self.child_task:
+                        print(f"==> Removing {task_id} from child tasks.")
                         self.child_task.remove(task_id)
                         self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
         

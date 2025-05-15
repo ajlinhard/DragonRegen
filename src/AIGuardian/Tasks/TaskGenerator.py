@@ -93,7 +93,7 @@ class TaskGenerator(Task):
         self.is_completed = True
     
     @Task.record_step(TaskState.input_required)
-    async def wait_on_dependency(self, timeout=300):
+    async def wait_on_dependency(self, timeout=180):
         """
         Wait for the Task to complete before proceeding.
         """
