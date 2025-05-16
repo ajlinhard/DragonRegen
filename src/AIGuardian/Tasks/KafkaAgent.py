@@ -8,15 +8,11 @@ from .DataStructCreate import DataStructCreate
 
 class KafkaAgent:
     def __init__(self, task_queue_topic: str=AILoggingTopics.AI_TASK_TOPIC, db_engine=None, group_id: str='default'):
+        raise NotImplementedError("KafkaAgent is not implemented yet.") # look at DummyAgent.ipynb in docs
         self.task_queue_topic = task_queue_topic
         self.group_id = group_id
         self.root_action = None
         self.db_engine = db_engine if db_engine else KafkaEngine.default_builder()
-        self.producer = KafkaProducer(bootstrap_servers=self.broker)
-        self.consumer = KafkaConsumer(self.task_queue_topic, 
-                                      bootstrap_servers=self.broker,
-                                      group_id=self.group_id,
-                                      auto_offset_reset='latest',)
 
     def initial_prompt(self, message: str):
         # TODO - Add code to decide the best initial agent.

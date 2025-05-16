@@ -57,8 +57,9 @@ class SchemaRefiner(TaskGenerator):
                     "purpose": table_info["purpose"],
                     "fields": table_info["fields"]
                 }
-                task = ColumnRefiner(task_parameters)
-                self.child_task.append(task)
+                task = ColumnRefiner(task_parameters, parent_task=self)
+                task.submit_task()
+                self.child_task.append(task.task_id)
         return self.child_task
     
     @Task.record_step(TaskState.completed)
@@ -69,7 +70,16 @@ class SchemaRefiner(TaskGenerator):
             if isinstance(task, ColumnRefiner):
                 d_tables = {**d_tables, **task.output_params}
         self.output_params = d_tables
-        return self.output_params
+
+        d_tables = {}
+        for key, val in self.child_task_output_artifacts.items():
+            if isinstance(val, dict):
+                d_tables = {**d_tables, **val}
+            else:
+                d_tables = {**d_tables, **json.loads(val)}
+        
+        self.output_params = d_tables
+        return super().complete_task()
 
     async def run(self, user_prompt=None):
         """

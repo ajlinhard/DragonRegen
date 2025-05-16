@@ -18,6 +18,9 @@ from ..AIUtils.GenAIUtils import GenAIUtils
 class ColumnRefiner(TaskGenerator):
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
         super().__init__(input_params, sequence_limit, verbose, parent_task)
+        # specific to this type of task
+        self.data_column_refiner = []
+
 
     # region static variables
     @staticmethod
@@ -50,6 +53,7 @@ class ColumnRefiner(TaskGenerator):
         Generate tasks based on the schema.
         """
         self.child_task = [] if self.child_task is None else self.child_task
+        self.data_column_refiner = []
         table_name = self.input_params.get("table_name")
         table_purpose = self.input_params.get("purpose")
         for col_name, col_description in self.input_params['fields'].items():
@@ -66,15 +70,18 @@ class ColumnRefiner(TaskGenerator):
             task_2 = DataColumnRefiner(task_parameters, parent_task=task_1)
             task_2.submit_task()
             self.child_task.append(task_2.task_id)
+            self.data_column_refiner.append(task_2.task_id)
         return self.child_task
     
     @Task.record_step(TaskState.completed)
     def complete_task(self):
         # Loop through the child tasks and rebuild the schema.
         ls_fields = []
-        for task in self.child_task:
-            if isinstance(task, DataColumnRefiner):
-                ls_fields.append(task.output_params)
+        for key, val in self.child_task_output_artifacts.items():
+            if key in self.data_column_refiner:
+                print(f" Adding Key: {key} to the list of fields")
+                ls_fields.append(val)
+        
         self.output_params = {self.input_params.get("table_name"):
                 {"purpose": self.input_params.get("purpose"), "fields": ls_fields}}
         return super().complete_task()
