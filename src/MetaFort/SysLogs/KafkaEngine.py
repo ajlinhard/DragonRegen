@@ -2,8 +2,12 @@
 import datetime
 import json
 from kafka import KafkaProducer, KafkaConsumer
+from kafka.admin import KafkaAdminClient, NewTopic
+from kafka.errors import TopicAlreadyExistsError
 from typing import Dict, List, Optional, Any, Union
-from ...MetaFort.AILoggingTopics import AILoggingTopics
+
+# Internal Package Imports
+from src.MetaFort.AILoggingTopics import AILoggingTopics
 
 class KafkaEngine():
     """Base class for database connection handling"""
@@ -39,8 +43,57 @@ class KafkaEngine():
         self.producer = None
         self.consumers = {}
     
+    @staticmethod
+    def initialize_system(connection_string: str):
+        """
+        Initialize the system with the given connection string:
+         - Create Kafka topics if they do not exist
+         - set up enough partitions and replication factor
+         - set up the schema registry (if is confluent kafka)
+        This is a static method and does not require an instance of the class to be called.
+        
+        Args:
+            connection_string: Connection string for the database
+        
+        Returns:
+        """
+        # Initialize the admin client
+        admin_client = KafkaAdminClient(
+            bootstrap_servers=['localhost:9092'],
+            client_id='my-admin-client'
+        )
+
+        # Topic configuration
+        topic_name = "my-test-topic"
+        num_partitions = 3
+        replication_factor = 1
+
+        # Create a NewTopic object
+        new_topics = [AILoggingTopics.AI_TASK_TOPIC,
+                        AILoggingTopics.AI_REQUEST_LOG_TOPIC,
+                        AILoggingTopics.AI_TASK_LOG_TOPIC,
+                        AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
+                    ]  
+        partition_cnt = [5, 5, 5, 5]
+        replication_factor = [2, 2, 2, 2]
+        
+        
+        for topic, partitions, replication in zip(new_topics, partition_cnt, replication_factor):
+            new_topic = NewTopic(
+                name=topic,
+                num_partitions=partitions,
+                replication_factor=replication
+            )
+            try:
+                admin_client.create_topics([new_topic])
+                print(f"Topic {topic} created successfully")
+            except TopicAlreadyExistsError:
+                print(f"Topic {topic} already exists")
+
+        admin_client.close()
+
     @classmethod
-    def default_builder(cls, group_id: str = 'default') -> 'KafkaEngine':
+    def default_builder(cls, subset_objects:List[str] = [], group_id: str = 'default') -> 'KafkaEngine':
         """Create a default KafkaEngine instance
         Returns:
             KafkaEngine: Default KafkaEngine instance
@@ -53,21 +106,30 @@ class KafkaEngine():
         kafka_engine.producer = KafkaProducer(bootstrap_servers=['localhost:9092'], max_block_ms=5000)
 
         # Create Consumers
-        kafka_engine.consumers[AILoggingTopics.AI_TASK_TOPIC] = KafkaConsumer(
+        if subset_objects == [] or AILoggingTopics.AI_TASK_TOPIC in subset_objects:
+            kafka_engine.consumers[AILoggingTopics.AI_TASK_TOPIC] = KafkaConsumer(
                 AILoggingTopics.AI_TASK_TOPIC,
                 bootstrap_servers=['localhost:9092'],
                 group_id=group_id,
                 auto_offset_reset='latest')
-        kafka_engine.consumers[AILoggingTopics.AI_TASK_LOG_TOPIC] = KafkaConsumer(
-                AILoggingTopics.AI_TASK_LOG_TOPIC,
-                bootstrap_servers=['localhost:9092'],
-                group_id=group_id,
-                auto_offset_reset='latest')
-        kafka_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC] = KafkaConsumer(
-                AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
-                bootstrap_servers=['localhost:9092'],
-                group_id=group_id,
-                auto_offset_reset='latest')
+        if subset_objects == [] or AILoggingTopics.AI_REQUEST_LOG_TOPIC in subset_objects:
+            kafka_engine.consumers[AILoggingTopics.AI_REQUEST_LOG_TOPIC] = KafkaConsumer(
+                    AILoggingTopics.AI_REQUEST_LOG_TOPIC,
+                    bootstrap_servers=['localhost:9092'],
+                    group_id=group_id,
+                    auto_offset_reset='latest')
+        if subset_objects == [] or AILoggingTopics.AI_TASK_LOG_TOPIC in subset_objects:
+            kafka_engine.consumers[AILoggingTopics.AI_TASK_LOG_TOPIC] = KafkaConsumer(
+                    AILoggingTopics.AI_TASK_LOG_TOPIC,
+                    bootstrap_servers=['localhost:9092'],
+                    group_id=group_id,
+                    auto_offset_reset='latest')
+        if subset_objects == [] or AILoggingTopics.AI_TASK_COMPLETED_TOPIC in subset_objects:
+            kafka_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC] = KafkaConsumer(
+                    AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
+                    bootstrap_servers=['localhost:9092'],
+                    group_id=group_id,
+                    auto_offset_reset='latest')
         return kafka_engine
 
     def has_producer(self, topic: str) -> bool:
