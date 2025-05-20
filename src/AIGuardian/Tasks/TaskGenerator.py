@@ -93,11 +93,11 @@ class TaskGenerator(Task):
         self.is_completed = True
     
     @Task.record_step(TaskState.input_required)
-    async def wait_on_dependency(self, timeout=180):
+    def wait_on_dependency(self, timeout=180):
         """
         Wait for the Task to complete before proceeding.
         """
-        await super().wait_on_dependency(timeout=timeout)
+        super().wait_on_dependency(timeout=timeout)
 
     def get_tools(self):
         """
@@ -113,16 +113,16 @@ class TaskGenerator(Task):
         self.child_task = [] if self.child_task is None else self.child_task
         return self.child_task
 
-    async def run(self, user_prompt=None):
+    def run(self, user_prompt=None):
         """
         Run the code to generate schema refinement tasks.
         """
         if self._task_state != TaskState.working:
             self.initialize()
         
-        await self.geneterate_tasks()
+        self.geneterate_tasks()
 
-        await self.wait_on_dependency()
+        self.wait_on_dependency()
 
         self.complete_task()
     # endregion task Methods

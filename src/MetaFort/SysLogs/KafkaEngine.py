@@ -40,7 +40,7 @@ class KafkaEngine():
         self.autocommit = autocommit
         self.verbose = verbose
         # Kafka Specific
-        self.producer = None
+        self.producer = KafkaProducer(bootstrap_servers=[self.connection_string], max_block_ms=5000)
         self.consumers = {}
     
     @staticmethod
@@ -75,9 +75,9 @@ class KafkaEngine():
                         AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
                     ]  
         partition_cnt = [5, 5, 5, 5]
-        replication_factor = [2, 2, 2, 2]
+        replication_factor = [1, 1, 1, 1]
         
-        
+        # zip together the topics and their configurations, to create them
         for topic, partitions, replication in zip(new_topics, partition_cnt, replication_factor):
             new_topic = NewTopic(
                 name=topic,
@@ -102,15 +102,14 @@ class KafkaEngine():
         kafka_engine = cls(
             connection_string='localhost:9092',
         )
-
-        kafka_engine.producer = KafkaProducer(bootstrap_servers=['localhost:9092'], max_block_ms=5000)
+        KafkaEngine.initialize_system(kafka_engine.connection_string)
 
         # Create Consumers
         if subset_objects == [] or AILoggingTopics.AI_TASK_TOPIC in subset_objects:
             kafka_engine.consumers[AILoggingTopics.AI_TASK_TOPIC] = KafkaConsumer(
                 AILoggingTopics.AI_TASK_TOPIC,
                 bootstrap_servers=['localhost:9092'],
-                group_id=group_id,
+                group_id='action-agent',
                 auto_offset_reset='latest')
         if subset_objects == [] or AILoggingTopics.AI_REQUEST_LOG_TOPIC in subset_objects:
             kafka_engine.consumers[AILoggingTopics.AI_REQUEST_LOG_TOPIC] = KafkaConsumer(
@@ -154,7 +153,7 @@ class KafkaEngine():
         """
         return topic in self.consumers.keys()
     
-    def insert(self, topic: str, data: Union[str, Dict[str, Any]]) -> bool:
+    def insert(self, topic: str, data, key:str = None) -> bool:
         """Insert data into the specified topic
         
         Args:
@@ -167,7 +166,7 @@ class KafkaEngine():
         if isinstance(data, dict):
             data = json.dumps(data).encode('utf-8')
         
-        self.producer.send(topic, value=data)
+        self.producer.send(topic, key=key, value=data)
         self.producer.flush()
         return True
     
@@ -195,3 +194,10 @@ class KafkaEngine():
             # if not isinstance(data[field_name], field_type):
             #     return False
         return True
+    
+    def close(self):
+        """Close the database connection"""
+        if self.producer:
+            self.producer.close()
+        for consumer in self.consumers.values():
+            consumer.close()

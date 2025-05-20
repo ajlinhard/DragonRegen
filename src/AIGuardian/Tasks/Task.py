@@ -3,7 +3,7 @@ import datetime
 import json
 import uuid
 from dotenv import load_dotenv
-from anthropic import AsyncAnthropic
+from anthropic import Anthropic, AsyncAnthropic
 from a2a.types import (
     AgentAuthentication,
     AgentCapabilities,
@@ -21,8 +21,8 @@ from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
 class Task(ABC):
 
-    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
-        self.input_params = input_params
+    def __init__(self, input_params={}, sequence_limit=10, verbose=False, parent_task=None):
+        self.input_params = {} if input_params is None else input_params
         self.output_params = {}
         self.verbose = verbose
         # Task tree variables and identifiers
@@ -186,12 +186,13 @@ class Task(ABC):
         return record_decorator
     
     @record_step(TaskState.submitted)
-    def submit_task(self):
+    def submit_task(self, user_prompt=None):
         """
         Get the Task ID.
         """
         # put or pull from the database
         table = AILoggingTopics.AI_TASK_TOPIC
+        self.input_params['user_prompt'] = user_prompt
         data_row = {"task_id": self.task_id,
             "task_name": self.name,
             "task_version": self.task_version,
@@ -236,7 +237,8 @@ class Task(ABC):
         Setup the AI client with the necessary parameters.
         """
         load_dotenv()
-        self.ai_client = AsyncAnthropic()
+        self.ai_client = Anthropic()
+        # self.ai_client = AsyncAnthropic()
 
     def setup_db_engine(self):
         """
@@ -305,7 +307,6 @@ class Task(ABC):
         self.text_response = text_response
         return True
     
-    @record_step("completed")
     @abstractmethod
     def complete_task(self):
         """
@@ -313,6 +314,7 @@ class Task(ABC):
         """
         # This method should be overridden in subclasses to provide specific completion Tasks
         self.is_completed = True
+        print(f"==> Task {self.task_id} complete_task")
         self.db_engine.insert(
             topic=AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
             data={
@@ -327,7 +329,7 @@ class Task(ABC):
 
     @abstractmethod
     @record_step(TaskState.input_required)
-    async def wait_on_dependency(self, timeout=300):
+    def wait_on_dependency(self, timeout=300):
         """
         Wait for the Task to complete before proceeding.
         """
@@ -351,9 +353,14 @@ class Task(ABC):
                         self.child_task.remove(task_id)
                         self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
         
+    def get_tools(self):
+        """
+        Get the tools for this task class or utility classes for the AI to consider using.
+        """
+        # This method should be overridden in subclasses to provide specific tools
+        return []
     
-    @record_step("working")
-    async def generate_task(self, retry_cnt=1, **kwargs):
+    def generate_task(self, retry_cnt=1, **kwargs):
         current_retry = 0
         # Set default values for parameters
         kwargs = dict(**kwargs, **self.model_parameters)
@@ -374,7 +381,7 @@ class Task(ABC):
             current_retry += 1
             # Send the request to the AI client
             request_timestamp = datetime.datetime.now()
-            message = await self.ai_client.messages.create(**create_params)
+            message = self.ai_client.messages.create(**create_params)
             response_timestamp = datetime.datetime.now()
             # Hygiene the output of the Task
             text_response = message.content[0].text
@@ -440,7 +447,7 @@ class Task(ABC):
             #end while loop
         return message
     
-    async def run(self, user_prompt=None):
+    def run(self, user_prompt=None):
         """
         Run the Task engine with the provided prompt.
         """
@@ -448,8 +455,9 @@ class Task(ABC):
             self.initialize()
         # TODO: add a pre-engineer prompt step to extract parameters and validate.
         # Engineer the prompt based of the Tasks function
-        if user_prompt is None:
+        if user_prompt is None or user_prompt == "":
             user_prompt = self.input_params.get("user_prompt", None)
+        print(f"==> Running {self.name} with prompt: {user_prompt}")
         prompt = self.engineer_prompt(user_prompt)
 
         # TODO: add a post-engineer prompt step to extract parameters
@@ -459,11 +467,11 @@ class Task(ABC):
         # 1. The AI API will be called with the prompt, Task settings
         # 2. Then use the validate_output method in the Task class.
         # 3. If the output is valid, then log the Task to the database.
-        result = await self.generate_task()
+        result = self.generate_task()
         self.response = result
         # Wait on dependencies
         if self.child_task:
-            await self.wait_on_dependency()
+            self.wait_on_dependency()
         # Complete Task
         self.complete_task()
         

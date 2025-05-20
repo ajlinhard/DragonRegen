@@ -44,7 +44,7 @@ class SchemaRefiner(TaskGenerator):
         }
     
     # region task Methods
-    async def geneterate_tasks(self):
+    def geneterate_tasks(self):
         """
         Generate tasks based on the schema.
         """
@@ -81,10 +81,10 @@ class SchemaRefiner(TaskGenerator):
         self.output_params = d_tables
         return super().complete_task()
 
-    async def run(self, user_prompt=None):
+    def run(self, user_prompt=None):
         """
         Run the code to generate schema refinement tasks.
         """
-        await super().run(user_prompt)
+        super().run(user_prompt)
 
     # region task Methods

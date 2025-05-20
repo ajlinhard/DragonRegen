@@ -151,7 +151,7 @@ class DataColumnRefiner(Task):
         return super().complete_task()
     
     @Task.record_step(TaskState.input_required)
-    async def wait_on_dependency(self, timeout=300):
+    def wait_on_dependency(self, timeout=300):
         """
         Wait for the Task to complete before proceeding.
         """

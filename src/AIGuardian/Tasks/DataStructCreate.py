@@ -151,11 +151,11 @@ class DataStructCreate(Task):
         # This method should be overridden in subclasses to provide specific tools
         return [SchemaMSSQL.create_table]
     
-    async def run(self, user_prompt):
+    def run(self, user_prompt):
         """
         Run the task with the given user prompt.
         """
-        await super().run(user_prompt)
+        super().run(user_prompt)
 
     # endregion task Methods
     

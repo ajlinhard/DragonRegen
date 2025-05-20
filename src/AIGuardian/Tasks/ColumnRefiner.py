@@ -48,7 +48,7 @@ class ColumnRefiner(TaskGenerator):
         }
     
     # region task Methods
-    async def geneterate_tasks(self):
+    def geneterate_tasks(self):
         """
         Generate tasks based on the schema.
         """
@@ -86,11 +86,11 @@ class ColumnRefiner(TaskGenerator):
                 {"purpose": self.input_params.get("purpose"), "fields": ls_fields}}
         return super().complete_task()
 
-    async def run(self, user_prompt=None):
+    def run(self, user_prompt=None):
         """
         Run the code to generate schema refinement tasks.
         """
-        await super().run(user_prompt)
+        super().run(user_prompt)
 
     # endregion task Methods
     

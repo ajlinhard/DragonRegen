@@ -1,6 +1,11 @@
 from abc import ABC, abstractmethod
 import datetime
 import json
+from a2a.types import (
+    TaskState,
+)
+
+
 from .Task import Task
 from .TaskRegistry import TaskRegistry
 from .TaskExceptions import ValidateAIResponseError
@@ -52,6 +57,8 @@ class TaskSayHello(Task):
         Generate a prompt for the task based on the user input.
         """
         # Alter input to try to format the response:
+        if user_prompt:
+            user_prompt = 'Hello there!'
         engineering_prompt = """{{prompt}}"""
         # Alter the prompt to include the JSON template:
         self.user_prompt = user_prompt
@@ -89,12 +96,13 @@ class TaskSayHello(Task):
         self.text_response = text_response
         return True
     
-    @Task.record_step("completed")
+    @Task.record_step(TaskState.completed)
     def complete_task(self):
         """
         Complete the task based of the values from the AI gnerated response.
         """
         # This method should be overridden in subclasses to provide specific completion tasks
+        print(f"TaskSayHello complete_task: {self.text_response}")
         return super().complete_task()
 
     def next_task(self):
@@ -111,15 +119,15 @@ class TaskSayHello(Task):
         # This method should be overridden in subclasses to provide specific tools
         return []
     
-    async def wait_on_dependency(self):
+    def wait_on_dependency(self):
         """
         Wait for the Task to complete before proceeding.
         """
         # This method should be overridden in subclasses to provide specific waiting Tasks
         pass
     
-    async def run(self, user_prompt):
+    def run(self, user_prompt=None):
         """
         Run the task with the provided prompt.
         """
-        await super().run(user_prompt)
+        super().run(user_prompt)
