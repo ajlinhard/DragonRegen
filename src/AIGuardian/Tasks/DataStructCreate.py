@@ -142,7 +142,14 @@ class DataStructCreate(Task):
         """
         self.output_params = json.loads(self.text_response)
         self.is_completed = True
-        return self.output_params
+        return super().complete_task()
+
+    @Task.record_step(TaskState.input_required)
+    def wait_on_dependency(self, timeout=300):
+        """
+        Wait for the Task to complete before proceeding.
+        """
+        super().wait_on_dependency(timeout=timeout)
 
     def get_tools(self):
         """
@@ -151,11 +158,5 @@ class DataStructCreate(Task):
         # This method should be overridden in subclasses to provide specific tools
         return [SchemaMSSQL.create_table]
     
-    def run(self, user_prompt):
-        """
-        Run the task with the given user prompt.
-        """
-        super().run(user_prompt)
-
     # endregion task Methods
     

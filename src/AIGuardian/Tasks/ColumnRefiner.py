@@ -76,6 +76,7 @@ class ColumnRefiner(TaskGenerator):
     @Task.record_step(TaskState.completed)
     def complete_task(self):
         # Loop through the child tasks and rebuild the schema.
+        print(f"====> COLUMN REFINER XXXCC: Complete Task {self.task_id}")
         ls_fields = []
         for key, val in self.child_task_output_artifacts.items():
             if key in self.data_column_refiner:
@@ -85,12 +86,6 @@ class ColumnRefiner(TaskGenerator):
         self.output_params = {self.input_params.get("table_name"):
                 {"purpose": self.input_params.get("purpose"), "fields": ls_fields}}
         return super().complete_task()
-
-    def run(self, user_prompt=None):
-        """
-        Run the code to generate schema refinement tasks.
-        """
-        super().run(user_prompt)
 
     # endregion task Methods
     

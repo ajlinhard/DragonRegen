@@ -81,10 +81,4 @@ class SchemaRefiner(TaskGenerator):
         self.output_params = d_tables
         return super().complete_task()
 
-    def run(self, user_prompt=None):
-        """
-        Run the code to generate schema refinement tasks.
-        """
-        super().run(user_prompt)
-
     # region task Methods

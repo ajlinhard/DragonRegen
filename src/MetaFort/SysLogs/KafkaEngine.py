@@ -1,6 +1,8 @@
 
-import datetime
 import json
+from datetime import datetime, timedelta
+import time
+import uuid
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import TopicAlreadyExistsError
@@ -42,6 +44,7 @@ class KafkaEngine():
         # Kafka Specific
         self.producer = KafkaProducer(bootstrap_servers=[self.connection_string], max_block_ms=5000)
         self.consumers = {}
+        self.topic_uuid = str(uuid.uuid4())
     
     @staticmethod
     def initialize_system(connection_string: str):
@@ -88,12 +91,12 @@ class KafkaEngine():
                 admin_client.create_topics([new_topic])
                 print(f"Topic {topic} created successfully")
             except TopicAlreadyExistsError:
-                print(f"Topic {topic} already exists")
+                continue
 
         admin_client.close()
 
     @classmethod
-    def default_builder(cls, subset_objects:List[str] = [], group_id: str = 'default') -> 'KafkaEngine':
+    def default_builder(cls, subset_objects:List[str] = [], group_id={}) -> 'KafkaEngine':
         """Create a default KafkaEngine instance
         Returns:
             KafkaEngine: Default KafkaEngine instance
@@ -103,31 +106,32 @@ class KafkaEngine():
             connection_string='localhost:9092',
         )
         KafkaEngine.initialize_system(kafka_engine.connection_string)
+        
 
         # Create Consumers
         if subset_objects == [] or AILoggingTopics.AI_TASK_TOPIC in subset_objects:
             kafka_engine.consumers[AILoggingTopics.AI_TASK_TOPIC] = KafkaConsumer(
                 AILoggingTopics.AI_TASK_TOPIC,
                 bootstrap_servers=['localhost:9092'],
-                group_id='action-agent',
+                group_id=group_id.get(AILoggingTopics.AI_TASK_TOPIC, 'action-agent'),
                 auto_offset_reset='latest')
         if subset_objects == [] or AILoggingTopics.AI_REQUEST_LOG_TOPIC in subset_objects:
             kafka_engine.consumers[AILoggingTopics.AI_REQUEST_LOG_TOPIC] = KafkaConsumer(
                     AILoggingTopics.AI_REQUEST_LOG_TOPIC,
                     bootstrap_servers=['localhost:9092'],
-                    group_id=group_id,
+                    group_id=group_id.get(AILoggingTopics.AI_REQUEST_LOG_TOPIC, f'task-request-log-{kafka_engine.topic_uuid}'),
                     auto_offset_reset='latest')
         if subset_objects == [] or AILoggingTopics.AI_TASK_LOG_TOPIC in subset_objects:
             kafka_engine.consumers[AILoggingTopics.AI_TASK_LOG_TOPIC] = KafkaConsumer(
                     AILoggingTopics.AI_TASK_LOG_TOPIC,
                     bootstrap_servers=['localhost:9092'],
-                    group_id=group_id,
+                    group_id=group_id.get(AILoggingTopics.AI_TASK_LOG_TOPIC, f'task-log-{kafka_engine.topic_uuid}'),
                     auto_offset_reset='latest')
         if subset_objects == [] or AILoggingTopics.AI_TASK_COMPLETED_TOPIC in subset_objects:
             kafka_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC] = KafkaConsumer(
                     AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
                     bootstrap_servers=['localhost:9092'],
-                    group_id=group_id,
+                    group_id=group_id.get(AILoggingTopics.AI_TASK_COMPLETED_TOPIC, f'task-completed-{kafka_engine.topic_uuid}'),
                     auto_offset_reset='latest')
         return kafka_engine
 
@@ -201,3 +205,242 @@ class KafkaEngine():
             self.producer.close()
         for consumer in self.consumers.values():
             consumer.close()
+
+    ## region Kafka Specific Tools
+
+    def search_batch_topic(self, topic_name, search_value, search_key:str=None, bootstrap_servers=['localhost:9092'], 
+                        timeout_seconds=60, from_beginning=True, deserializer=None):
+        """
+        Search through a Kafka topic for messages containing a specific value.
+        
+        Parameters:
+        - topic_name: Name of the Kafka topic to search
+        - search_value: The value to search for (can be string, int, etc.)
+        - bootstrap_servers: Kafka broker addresses
+        - timeout_seconds: How long to search before giving up (in seconds)
+        - from_beginning: Whether to search from the beginning of the topic or recent messages
+        - deserializer: Optional function to deserialize message values (default: attempt JSON)
+        
+        Returns:
+        - List of matching messages with metadata
+        """
+        # Set up the consumer (no group ID needed for searching because we won't commit offsets)
+        consumer = KafkaConsumer(
+            topic_name,
+            bootstrap_servers=self.connection_string,
+            auto_offset_reset='earliest' if from_beginning else 'latest',
+            enable_auto_commit=False,  # Don't commit offsets since we're just searching
+            consumer_timeout_ms=timeout_seconds * 1000  # Stop consuming after timeout
+        )
+        
+        matching_messages = []
+        start_time = datetime.now()
+        
+        print(f"Searching topic '{topic_name}' for value: {search_value}")
+        print(f"This will timeout after {timeout_seconds} seconds if no more messages are available.")
+        
+        # Default deserializer tries JSON, falls back to string
+        if deserializer is None:
+            def default_deserializer(value):
+                if value is None:
+                    return None
+                try:
+                    return json.loads(value.decode('utf-8'))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    return value.decode('utf-8', errors='replace')
+            deserializer = default_deserializer
+        
+        # Start consuming messages
+        message_count = 0
+        try:
+            while True:
+                messages = consumer.poll(timeout_ms=1000, max_records=5000)
+                if not messages and message_count > 0:
+                    break  # No more messages to consume
+                    
+                for partition, msgs in messages.items():
+                    message_count += len(msgs)
+                    print(f"Processing {len(msgs)} messages from partition {partition}")
+                    for message in msgs:
+                        # Print progress every 1000 messages
+                        if message_count % 1000 == 0:
+                            elapsed = (datetime.now() - start_time).total_seconds()
+                            print(f"Processed {message_count} messages in {elapsed:.2f} seconds...")
+                        
+                        # Deserialize the message value
+                        try:
+                            value = deserializer(message.value)
+                        except Exception as e:
+                            print(f"Error deserializing message: {e}")
+                            continue
+                        
+                        # Check if the search value exists in the message
+                        found = False
+                        if search_key:
+                            # If a search key is provided, check if the key exists in the message
+                            if isinstance(value, dict) and search_key in value:
+                                found = value[search_key] == search_value
+                        else:
+                            # If no search key is provided, check the entire message
+                            found = self.record_search(value, search_value)
+                        
+                        # If found, add to our results
+                        if found:
+                            matching_messages.append({
+                                'topic': message.topic,
+                                'partition': message.partition,
+                                'offset': message.offset,
+                                'timestamp': message.timestamp,
+                                'key': message.key.decode('utf-8') if message.key else None,
+                                'value': value
+                            })
+                            print(f"Found match at offset {message.offset} in partition {message.partition}")
+                    
+        except StopIteration:
+            # Consumer timeout reached
+            pass
+        finally:
+            consumer.close()
+        
+        # Print summary
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        print(f"Search completed in {elapsed_time:.2f} seconds.")
+        print(f"Processed {message_count} messages, found {len(matching_messages)} matches.")
+        
+        return matching_messages
+    
+
+    def search_kafka_topic(self, topic_name, search_value, search_key:str=None, bootstrap_servers=['localhost:9092'], 
+                        timeout_seconds=60, from_beginning=True, deserializer=None):
+        """
+        Search through a Kafka topic for messages containing a specific value.
+        
+        Parameters:
+        - topic_name: Name of the Kafka topic to search
+        - search_value: The value to search for (can be string, int, etc.)
+        - bootstrap_servers: Kafka broker addresses
+        - timeout_seconds: How long to search before giving up (in seconds)
+        - from_beginning: Whether to search from the beginning of the topic or recent messages
+        - deserializer: Optional function to deserialize message values (default: attempt JSON)
+        
+        Returns:
+        - List of matching messages with metadata
+        """
+        # Set up the consumer (no group ID needed for searching because we won't commit offsets)
+        consumer = KafkaConsumer(
+            topic_name,
+            bootstrap_servers=self.connection_string,
+            auto_offset_reset='earliest' if from_beginning else 'latest',
+            enable_auto_commit=False,  # Don't commit offsets since we're just searching
+            consumer_timeout_ms=timeout_seconds * 1000  # Stop consuming after timeout
+        )
+        
+        matching_messages = []
+        start_time = datetime.now()
+        
+        print(f"Searching topic '{topic_name}' for value: {search_value}")
+        print(f"This will timeout after {timeout_seconds} seconds if no more messages are available.")
+        
+        # Default deserializer tries JSON, falls back to string
+        if deserializer is None:
+            def default_deserializer(value):
+                if value is None:
+                    return None
+                try:
+                    return json.loads(value.decode('utf-8'))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    return value.decode('utf-8', errors='replace')
+            deserializer = default_deserializer
+        
+        # Start consuming messages
+        message_count = 0
+        try:
+            for message in consumer:
+                message_count += 1
+                
+                # Print progress every 1000 messages
+                if message_count % 1000 == 0:
+                    elapsed = (datetime.now() - start_time).total_seconds()
+                    print(f"Processed {message_count} messages in {elapsed:.2f} seconds...")
+                
+                # Deserialize the message value
+                try:
+                    value = deserializer(message.value)
+                except Exception as e:
+                    print(f"Error deserializing message: {e}")
+                    continue
+                
+                # Check if the search value exists in the message
+                found = False
+                if search_key:
+                    # If a search key is provided, check if the key exists in the message
+                    if isinstance(value, dict) and search_key in value:
+                        found = value[search_key] == search_value
+                else:
+                    # If no search key is provided, check the entire message
+                    found = self.record_search(value, search_value)
+                
+                # If found, add to our results
+                if found:
+                    matching_messages.append({
+                        'topic': message.topic,
+                        'partition': message.partition,
+                        'offset': message.offset,
+                        'timestamp': message.timestamp,
+                        'key': message.key.decode('utf-8') if message.key else None,
+                        'value': value
+                    })
+                    print(f"Found match at offset {message.offset} in partition {message.partition}")
+                    
+        except StopIteration:
+            # Consumer timeout reached
+            pass
+        finally:
+            consumer.close()
+        
+        # Print summary
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        print(f"Search completed in {elapsed_time:.2f} seconds.")
+        print(f"Processed {message_count} messages, found {len(matching_messages)} matches.")
+        
+        return matching_messages
+    
+    def record_search(self, value, search_value):
+        """
+        Check if the search_value is anywhere in the value.
+        This is a recursive function that checks all levels of the value.
+        The search is an expensive but thorough search of kafka messages.
+        """
+        # For string values, check for substring
+        if isinstance(value, str) and isinstance(search_value, str):
+            found = search_value in value
+        # For dictionaries (JSON objects), check all values recursively
+        elif isinstance(value, dict):
+            def check_dict(d, search_val):
+                for k, v in d.items():
+                    if isinstance(v, dict):
+                        if check_dict(v, search_val):
+                            return True
+                    elif isinstance(v, list):
+                        if check_list(v, search_val):
+                            return True
+                    elif str(search_val) == str(v):
+                        return True
+                return False
+            
+            def check_list(lst, search_val):
+                for item in lst:
+                    if isinstance(item, dict):
+                        if check_dict(item, search_val):
+                            return True
+                    elif isinstance(item, list):
+                        if check_list(item, search_val):
+                            return True
+                    elif str(search_val) == str(item):
+                        return True
+                return False
+            
+            found = check_dict(value, search_value)
+        # For other types, convert to string and compare
+        else:
+            found = str(search_value) == str(value)

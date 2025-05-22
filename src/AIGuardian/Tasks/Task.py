@@ -35,7 +35,7 @@ class Task(ABC):
         self.response = None
         self.text_response = None
         self.parent_task = parent_task
-        self.child_task = None
+        self.child_task = []
         self.child_task_output_artifacts = {}
         # read-only properties
         self._name = self.__class__.__name__
@@ -337,21 +337,34 @@ class Task(ABC):
         start_time = datetime.datetime.now()
         print(f"==> Waiting on {self.child_task} to complete.")
         while self.child_task and (datetime.datetime.now() - start_time).total_seconds() < timeout:
-            completed = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=20)
-            completed_length = len(completed)
-            if completed_length > 0:
-                print(f"==> Found {len(completed)} completed tasks.")
-            for topic_partition, messages in completed.items():
-                for message in messages:
-                    if not isinstance(message.value, dict):
-                        task_json = json.loads(message.value.decode('utf-8'))
-                    else:
-                        task_json = message.value
-                    task_id = task_json.get("task_id")
-                    if task_id in self.child_task:
-                        print(f"==> Removing {task_id} from child tasks.")
-                        self.child_task.remove(task_id)
-                        self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
+            completed_tasks = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=10)
+            self.wait_on_dependency_check(completed_tasks)
+
+    def is_waiting(self):
+        """
+        Check if the Task is still waiting for dependencies.
+        """
+        return len(self.child_task) > 0
+
+    def wait_on_dependency_check(self, completed_tasks):
+        # completed_length = len(completed_tasks)
+        # if completed_length > 0:
+        #     print(f"==> Found {len(completed_tasks)} completed tasks.")
+        if isinstance(completed_tasks, list):
+            completed_tasks = {0: completed_tasks}
+        for topic_partition, messages in completed_tasks.items():
+            for message in messages:
+                if not isinstance(message.value, dict):
+                    task_json = json.loads(message.value.decode('utf-8'))
+                else:
+                    task_json = message.value
+                task_id = task_json.get("task_id")
+                if task_id in self.child_task:
+                    print(f"==> Removing {task_id} from child tasks.")
+                    self.child_task.remove(task_id)
+                    self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
+        
+        return self.is_waiting()
         
     def get_tools(self):
         """
@@ -447,7 +460,7 @@ class Task(ABC):
             #end while loop
         return message
     
-    def run(self, user_prompt=None):
+    def run(self, user_prompt=None, delay_waiting=False):
         """
         Run the Task engine with the provided prompt.
         """
@@ -469,10 +482,11 @@ class Task(ABC):
         # 3. If the output is valid, then log the Task to the database.
         result = self.generate_task()
         self.response = result
-        # Wait on dependencies
-        if self.child_task:
-            self.wait_on_dependency()
-        # Complete Task
-        self.complete_task()
+        if not delay_waiting:
+            # Wait on dependencies
+            if self.child_task:
+                self.wait_on_dependency()
+            # Complete Task
+            self.complete_task()
         
         # endregion Task Methods

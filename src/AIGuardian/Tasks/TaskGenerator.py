@@ -90,7 +90,7 @@ class TaskGenerator(Task):
         Complete the task based of the values from the AI gnerated response. Fill in the output_params for the task.
         """
         # This method should be overridden in subclasses to provide specific completion tasks
-        self.is_completed = True
+        return super().complete_task()
     
     @Task.record_step(TaskState.input_required)
     def wait_on_dependency(self, timeout=180):
@@ -113,7 +113,7 @@ class TaskGenerator(Task):
         self.child_task = [] if self.child_task is None else self.child_task
         return self.child_task
 
-    def run(self, user_prompt=None):
+    def run(self, user_prompt=None, delay_waiting=False):
         """
         Run the code to generate schema refinement tasks.
         """
@@ -122,7 +122,7 @@ class TaskGenerator(Task):
         
         self.geneterate_tasks()
 
-        self.wait_on_dependency()
-
-        self.complete_task()
+        if not delay_waiting:
+            self.wait_on_dependency()
+            self.complete_task()
     # endregion task Methods
