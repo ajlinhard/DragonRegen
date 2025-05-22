@@ -141,6 +141,24 @@ class Task(ABC):
 
     # endregion Properties
 
+    def update_task_log(self, task_state, step_status=None, error_code=None, error_message=None):
+        """
+        Update the Task ID.
+        """
+        data_row = {
+            "task_log_id": uuid.uuid4().int,
+            "task_id": self.task_id,
+            "task_name": self.name,
+            "group_task_id": self.group_task_id,
+            "log_dt": datetime.datetime.now().isoformat(),
+            "task_state": self.task_state,
+            "error_code": error_code,
+            "error_message": error_message,
+            "error_timestamp": datetime.datetime.now().isoformat() if error_message else None,
+            "metadata": json.dumps({"step_status": step_status}) if step_status else None,
+        }
+        return data_row
+
     # region logging
     def update_task(self, task_state, step_status=None, error_code=None, error_message=None):
         """

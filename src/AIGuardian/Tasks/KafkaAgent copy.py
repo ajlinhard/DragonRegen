@@ -12,7 +12,7 @@ from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 from src.AIGuardian.Tasks.DataStructCreate import DataStructCreate
 from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
 
-class KafkaAgent:
+class KafkaAgentV2:
     def __init__(self, task_queue_topic: str=AILoggingTopics.AI_TASK_TOPIC, db_engine=None, group_id: str='default', end_processing: int=300):
         self.task_queue_topic = task_queue_topic
         self.group_id = group_id
@@ -53,6 +53,7 @@ class KafkaAgent:
                     else:
                         task_json = message.value
                     # For example, you can create an task object and execute it
+                    self.db_engine.insert(topic=table, data=data_row)
                     task = TaskRegistry.build_from_json(task_json, self.db_engine)
                     # print(f"==> Task Type: {type(task)}")
                     # print(f"Task: {task.name} ==> {task.task_id} FROM ID {task_json['task_id']}")
@@ -76,19 +77,22 @@ class KafkaAgent:
             # Check in on waiting tasks
             if self.waiting_tasks:
                 completed_tasks = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=20)
-                tasks_to_remove = []
                 for task in self.waiting_tasks:
                     self.completed_tasks_received_d1[task.task_id] = self.completed_tasks_received_d1.get(task.task_id, [])  + self.kafka_records_to_list(completed_tasks, 'task_id')
                     task.wait_on_dependency_check(completed_tasks)
                     if not task.is_waiting():
                         task.complete_task()
                         self.completed_tasks.append(task)
-                        tasks_to_remove.append(task)
+                        self.waiting_tasks.remove(task)
                         last_consumed_records = datetime.now()
-                # Remove the completed task after interating through it
-                for r_task in tasks_to_remove:
-                    self.waiting_tasks.remove(r_task)
                 self.completed_tasks_received = self.completed_tasks_received + self.kafka_records_to_list(completed_tasks, 'task_id')
+                # for topic_partition, c_messages in completed_tasks.items():
+                #     for c_message in c_messages:
+                #         if not isinstance(c_message.value, dict):
+                #             task_json = json.loads(c_message.value.decode('utf-8'))
+                #         else:
+                #             task_json = c_message.value
+                #         self.completed_tasks_received.append(task_json.get('task_id'))
 
         print("End of processing")
         self.end_time = datetime.now()
