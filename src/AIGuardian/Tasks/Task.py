@@ -37,6 +37,8 @@ class Task(ABC):
         self.parent_task = parent_task
         self.child_task = []
         self.child_task_output_artifacts = {}
+        self.processed_comp_tasks = []
+        self.removed_comp_tasks = []
         # read-only properties
         self._name = self.__class__.__name__
         self._description = Task.get_description() # self.description 
@@ -347,11 +349,6 @@ class Task(ABC):
         return len(self.child_task) > 0
 
     def wait_on_dependency_check(self, completed_tasks):
-        # completed_length = len(completed_tasks)
-        # if completed_length > 0:
-        #     print(f"==> Found {len(completed_tasks)} completed tasks.")
-        if isinstance(completed_tasks, list):
-            completed_tasks = {0: completed_tasks}
         for topic_partition, messages in completed_tasks.items():
             for message in messages:
                 if not isinstance(message.value, dict):
@@ -359,8 +356,10 @@ class Task(ABC):
                 else:
                     task_json = message.value
                 task_id = task_json.get("task_id")
+                self.processed_comp_tasks.append(task_id)
                 if task_id in self.child_task:
                     print(f"==> Removing {task_id} from child tasks.")
+                    self.removed_comp_tasks.append(task_id)
                     self.child_task.remove(task_id)
                     self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
         

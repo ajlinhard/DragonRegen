@@ -19,9 +19,13 @@ class KafkaAgent:
         self.end_processing = end_processing
         self.db_engine = db_engine if db_engine else KafkaEngine.default_builder()
         self.waiting_tasks = []
+        self.received_tasks = []
         self.processed_tasks = []
         self.completed_tasks = []
+        self.completed_tasks_received = []
+        self.completed_tasks_received_d1 = {}
         self.start_time = datetime.now()
+        self.end_time = None
         logging.basicConfig(
             filename=f'F:\Airflow_Test\DragonGenLogs\kafka_agent_{self.start_time.strftime("%Y_%m_%d_%H_%M_%S_%f")}.log',  # Output to file
             filemode='w',        # 'w' to overwrite, 'a' to append
@@ -53,6 +57,7 @@ class KafkaAgent:
                     # print(f"==> Task Type: {type(task)}")
                     # print(f"Task: {task.name} ==> {task.task_id} FROM ID {task_json['task_id']}")
                     task_list.append(task)
+                    self.received_tasks.append(task)
             
             # Run the task polled by the Kafka consumer
             for task_item in task_list:
@@ -70,15 +75,35 @@ class KafkaAgent:
 
             # Check in on waiting tasks
             if self.waiting_tasks:
-                print("==> Reviewing waiting tasks")
                 completed_tasks = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=20)
                 for task in self.waiting_tasks:
+                    self.completed_tasks_received_d1[task.task_id] = self.completed_tasks_received_d1.get(task.task_id, [])  + self.kafka_records_to_list(completed_tasks, 'task_id')
                     task.wait_on_dependency_check(completed_tasks)
                     if not task.is_waiting():
                         task.complete_task()
                         self.completed_tasks.append(task)
                         self.waiting_tasks.remove(task)
-                    last_consumed_records = datetime.now()
+                        last_consumed_records = datetime.now()
+                self.completed_tasks_received = self.completed_tasks_received + self.kafka_records_to_list(completed_tasks, 'task_id')
+                # for topic_partition, c_messages in completed_tasks.items():
+                #     for c_message in c_messages:
+                #         if not isinstance(c_message.value, dict):
+                #             task_json = json.loads(c_message.value.decode('utf-8'))
+                #         else:
+                #             task_json = c_message.value
+                #         self.completed_tasks_received.append(task_json.get('task_id'))
 
         print("End of processing")
-        self.db_engine.close()
+        self.end_time = datetime.now()
+        # self.db_engine.close()
+
+    def kafka_records_to_list(self, records, key):
+        kcr_list = []
+        for topic_partition, c_messages in records.items():
+            for c_message in c_messages:
+                if not isinstance(c_message.value, dict):
+                    task_json = json.loads(c_message.value.decode('utf-8'))
+                else:
+                    task_json = c_message.value
+                kcr_list.append(task_json.get(key))
+        return kcr_list
