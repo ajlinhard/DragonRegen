@@ -1,0 +1,124 @@
+{
+  "quote_coverages": {
+    "purpose": "Junction table linking quotes to selected coverage types with specific limits and deductibles",
+    "fields": [
+      "{\"name\": \"deductible\", \"type\": \"Decimal\", \"nullable\": true, \"metadata\": {\"description\": \"amount insured must pay before insurance covers the rest\", \"col_type\": null}}",
+      "{\"name\": \"quote_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to quotes table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"coverage_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to coverage_types table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"quote_coverage_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for quote coverage relationship\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"coverage_limit\", \"type\": \"Decimal\", \"nullable\": false, \"metadata\": {\"description\": \"maximum amount insurance will pay for this coverage\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"premium_amount\", \"type\": \"Decimal\", \"nullable\": true, \"metadata\": {\"description\": \"cost for this specific coverage\", \"col_type\": null}}"
+    ]
+  },
+  "coverage_types": {
+    "purpose": "Stores different types of insurance coverage available",
+    "fields": [
+      "{\"name\": \"coverage_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for coverage type\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of coverage (liability, comprehensive, collision, etc.)\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"is_required\", \"type\": \"Boolean\", \"nullable\": false, \"metadata\": {\"description\": \"boolean indicating if coverage is legally required\", \"unique_fl\": false, \"default_value\": false, \"col_type\": null}}",
+      "{\"name\": \"description\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"detailed description of what the coverage includes\", \"col_type\": null}}"
+    ]
+  },
+  "quote_discounts": {
+    "purpose": "Junction table linking quotes to applied discounts",
+    "fields": [
+      "{\"name\": \"applied_percentage\", \"type\": \"Decimal\", \"nullable\": false, \"metadata\": {\"description\": \"actual percentage applied for this specific quote\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"quote_discount_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for quote discount relationship\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"amount\", \"type\": \"Decimal\", \"nullable\": false, \"metadata\": {\"description\": \"monetary value of the discount\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"discount_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to discount_types table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"quote_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to quotes table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "vehicles": {
+    "purpose": "Stores information about vehicles to be insured",
+    "fields": [
+      "{\"name\": \"make\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"vehicle manufacturer\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"primary_use\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"primary use of vehicle (commute, pleasure, business)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"vehicle_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for vehicle identification\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"garage_address_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to addresses table for where vehicle is kept\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"annual_mileage\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"estimated annual mileage\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"user_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to users table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"year\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"year of manufacture\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"vin\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"vehicle identification number\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"model\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"vehicle model name\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "quote_requests": {
+    "purpose": "Stores information about quote requests initiated by users",
+    "fields": [
+      "{\"name\": \"user_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to users table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"status\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"current status of quote request (pending, completed, expired)\", \"unique_fl\": false, \"default_value\": \"pending\", \"col_type\": null}}",
+      "{\"name\": \"effective_date\", \"type\": \"Date\", \"nullable\": true, \"metadata\": {\"description\": \"requested start date for insurance coverage\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"request_date\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when quote was requested\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"quote_request_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for quote request\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "driver_history": {
+    "purpose": "Stores driving history information for risk assessment",
+    "fields": [
+      "{\"name\": \"incident_type\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"Type of incident (accident, violation, claim)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"description\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"description of the incident\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"history_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for history record\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"driver_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to drivers table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"incident_date\", \"type\": \"Date\", \"nullable\": true, \"metadata\": {\"description\": \"date when incident occurred\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"at_fault\", \"type\": \"Boolean\", \"nullable\": true, \"metadata\": {\"description\": \"boolean indicating if driver was at fault (for accidents)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "discount_types": {
+    "purpose": "Stores different types of discounts available for insurance quotes",
+    "fields": [
+      "{\"name\": \"percentage\", \"type\": \"Float\", \"nullable\": false, \"metadata\": {\"description\": \"standard percentage amount for this discount type\", \"col_type\": null}}",
+      "{\"name\": \"description\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"detailed description of the discount\", \"col_type\": null}}",
+      "{\"name\": \"name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of discount (safe driver, multi-policy, etc.)\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"discount_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for discount type\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "quotes": {
+    "purpose": "Stores generated insurance quotes with pricing information",
+    "fields": [
+      "{\"name\": \"quote_request_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to quote_requests table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"is_accepted\", \"type\": \"Boolean\", \"nullable\": true, \"metadata\": {\"description\": \"boolean indicating if quote was accepted by user\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"quote_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for quote\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when quote was generated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"expires_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when quote expires\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"payment_frequency\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"frequency of payments (monthly, quarterly, annually)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"total_premium\", \"type\": \"Decimal\", \"nullable\": false, \"metadata\": {\"description\": \"total cost of insurance premium\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "addresses": {
+    "purpose": "Stores address information for users and risk assessment",
+    "fields": [
+      "{\"name\": \"state\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"state or province\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"zip_code\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"postal code\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"country\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"country name\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"city\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"city name\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"street_address\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"street number and name\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"address_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for address identification\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "users": {
+    "purpose": "Stores information about registered users who request car insurance quotes",
+    "fields": [
+      "{\"name\": \"email\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"user's email address for communication\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"address_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"Foreign key to addresses table that links users to their address information.\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"last_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"user's last name\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"date_of_birth\", \"type\": \"Date\", \"nullable\": false, \"metadata\": {\"description\": \"user's date of birth for age calculation\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"phone_number\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"user's contact phone number\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": true, \"metadata\": {\"description\": \"timestamp when user record was last updated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"first_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"user's first name\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when user record was created\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"user_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for user identification\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "drivers": {
+    "purpose": "Stores information about drivers to be covered by the insurance",
+    "fields": [
+      "{\"name\": \"years_licensed\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"number of years driver has been licensed\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"driver_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID, primary key for driver identification\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"license_number\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"driver's license number\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"user_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to users table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"is_primary\", \"type\": \"Boolean\", \"nullable\": false, \"metadata\": {\"description\": \"Boolean indicating if this is the primary driver\", \"unique_fl\": false, \"default_value\": false, \"col_type\": null}}",
+      "{\"name\": \"license_state\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"state where license was issued\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  }
+}

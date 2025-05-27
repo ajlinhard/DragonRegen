@@ -9,11 +9,11 @@ from a2a.types import (
     TaskState,
 )
 
-from ..AIUtils.GenAIUtils import GenAIUtils
-from .TaskRegistry import TaskRegistry
-from .Task import Task
-from .TaskExceptions import ValidateAIResponseError
-from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
+from src.AIGuardian.AIUtils.GenAIUtils import GenAIUtils
+from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
+from src.AIGuardian.Tasks.Task import Task
+from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
+from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 
 @TaskRegistry.register("DataStructCreate")
 class DataStructCreate(Task):
@@ -100,6 +100,8 @@ class DataStructCreate(Task):
         </JSON_Template>
         """
         # Alter the prompt to include the JSON template:
+        # if not user_prompt:
+        #     user_prompt = 'Create a data structure for simulating a business or people working on project together with different task, projects, and processes.'
         self.user_prompt = user_prompt
         self.engineered_prompt = engineering_prompt.replace("{{prompt}}",user_prompt)
         return self.engineered_prompt
@@ -135,7 +137,6 @@ class DataStructCreate(Task):
         """
         return GenAIUtils.validate_json(text_response)
     
-    @Task.record_step(TaskState.completed)
     def complete_task(self):
         """
         Complete the task based of the values from the AI gnerated response.
@@ -144,7 +145,6 @@ class DataStructCreate(Task):
         self.is_completed = True
         return super().complete_task()
 
-    @Task.record_step(TaskState.input_required)
     def wait_on_dependency(self, timeout=300):
         """
         Wait for the Task to complete before proceeding.

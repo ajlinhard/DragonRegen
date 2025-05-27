@@ -1,0 +1,144 @@
+{
+  "companies": {
+    "purpose": "Stores information about the companies that provide ad data",
+    "fields": [
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"company_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each company\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"contact_info\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object containing contact details\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"industry\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"Industry the company operates in.\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"company_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the company\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}"
+    ]
+  },
+  "ad_spots": {
+    "purpose": "Records individual ad airings on TV networks",
+    "fields": [
+      "{\"name\": \"air_datetime\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"exact date and time when the ad aired\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"creative_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to ad_creatives table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"program_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the program during which the ad aired\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"network_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"Foreign key to tv_networks table that identifies the TV network where the ad was aired.\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"cost\", \"type\": \"Decimal\", \"nullable\": true, \"metadata\": {\"description\": \"cost of the ad spot\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"campaign_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to ad_campaigns table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"duration_seconds\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"actual duration of the aired spot\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"spot_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each ad spot\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "attribution_results": {
+    "purpose": "Stores results of attribution analysis linking ads to sales",
+    "fields": [
+      "{\"name\": \"result_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each attribution result\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"time_period\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"time period for the attribution analysis\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"campaign_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to ad_campaigns table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"attribution_percentage\", \"type\": \"Float\", \"nullable\": true, \"metadata\": {\"description\": \"percentage of total sales attributed to the campaign\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"model_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to attribution_models table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"attributed_sales\", \"type\": \"Decimal\", \"nullable\": true, \"metadata\": {\"description\": \"total sales attributed to the campaign\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"confidence_score\", \"type\": \"Float\", \"nullable\": true, \"metadata\": {\"description\": \"Statistical confidence in the attribution between ads and sales.\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"roi\", \"type\": \"Float\", \"nullable\": true, \"metadata\": {\"description\": \"calculated return on investment\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"detailed_results\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object with detailed attribution metrics\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "data_quality_logs": {
+    "purpose": "Logs data quality issues and validation results",
+    "fields": [
+      "{\"name\": \"check_type\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"Type of quality check performed\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"log_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each log entry\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"issues_found\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"number of issues identified\", \"unique_fl\": false, \"default_value\": 0, \"col_type\": null}}",
+      "{\"name\": \"source_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"Foreign key to data_sources table that identifies the source of the data quality issue or validation result\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"check_datetime\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"when the quality check was performed\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"resolution_status\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"Status of issue resolution\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"details\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object with detailed information about issues\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"status\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"Result of the quality check (pass/fail)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "attribution_models": {
+    "purpose": "Defines different attribution models for analyzing ad effectiveness",
+    "fields": [
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"model_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each attribution model\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"description\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"detailed description of how the model works\", \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": true, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"model_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the attribution model\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_by\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"user who created the model\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"parameters\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object containing model parameters for different attribution models used in analyzing ad effectiveness\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "data_sources": {
+    "purpose": "Tracks the various data sources feeding into the system",
+    "fields": [
+      "{\"name\": \"company_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to companies table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"status\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"current status of the data source\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"source_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each data source\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"source_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the data source\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"refresh_frequency\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"how often the data is updated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"connection_details\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object with connection parameters\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"source_type\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"type of data provided (sales, ad spots, etc.)\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"data_format\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"format of the incoming data\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "ad_campaigns": {
+    "purpose": "Tracks television ad campaigns run by companies",
+    "fields": [
+      "{\"name\": \"campaign_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each campaign\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"company_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"Foreign key to companies table that identifies which company ran the television ad campaign.\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"goals\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"campaign objectives and KPIs\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"end_date\", \"type\": \"Date\", \"nullable\": true, \"metadata\": {\"description\": \"end date of the campaign\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"status\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"current status of the campaign (active, completed, paused)\", \"unique_fl\": false, \"default_value\": \"active\", \"col_type\": null}}",
+      "{\"name\": \"campaign_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the campaign\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"start_date\", \"type\": \"Date\", \"nullable\": false, \"metadata\": {\"description\": \"start date of the campaign\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"budget\", \"type\": \"Decimal\", \"nullable\": false, \"metadata\": {\"description\": \"total budget allocated for the campaign\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"target_audience\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object describing target demographics\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}"
+    ]
+  },
+  "ad_creatives": {
+    "purpose": "Stores details about the creative content of ads",
+    "fields": [
+      "{\"name\": \"content_url\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"URL to the creative content\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"creative_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each creative\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"campaign_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to ad_campaigns table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"duration_seconds\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"length of the ad in seconds\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"creative_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the creative\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"format\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"format of the ad (video, animation, etc.)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"metadata\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object with additional creative details for ads\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "sales_data": {
+    "purpose": "Stores sales information for attribution analysis",
+    "fields": [
+      "{\"name\": \"customer_id\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"anonymized customer identifier\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": true, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"sale_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each sale record\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"company_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"foreign key to companies table\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"units_sold\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"number of units sold\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"product_id\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"identifier for the product sold\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"location\", \"type\": \"String\", \"nullable\": true, \"metadata\": {\"description\": \"geographic location of the sale\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"sale_datetime\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"date and time of the sale\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"amount\", \"type\": \"Decimal\", \"nullable\": false, \"metadata\": {\"description\": \"monetary value of the sale\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"channel\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"sales channel (online, in-store, etc.)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}"
+    ]
+  },
+  "tv_networks": {
+    "purpose": "Information about television networks where ads are aired",
+    "fields": [
+      "{\"name\": \"audience_demographics\", \"type\": \"JSON\", \"nullable\": true, \"metadata\": {\"description\": \"JSON object with viewer demographic information.\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"reach\", \"type\": \"Integer\", \"nullable\": true, \"metadata\": {\"description\": \"estimated viewer reach\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"network_id\", \"type\": \"Integer\", \"nullable\": false, \"metadata\": {\"description\": \"unique ID for each network\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"updated_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was last updated\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}",
+      "{\"name\": \"network_name\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"name of the TV network\", \"unique_fl\": true, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"network_type\", \"type\": \"String\", \"nullable\": false, \"metadata\": {\"description\": \"type of network (cable, broadcast, streaming)\", \"unique_fl\": false, \"default_value\": null, \"col_type\": null}}",
+      "{\"name\": \"created_at\", \"type\": \"Timestamp\", \"nullable\": false, \"metadata\": {\"description\": \"timestamp when the record was created\", \"unique_fl\": false, \"default_value\": \"CURRENT_TIMESTAMP\", \"col_type\": null}}"
+    ]
+  }
+}

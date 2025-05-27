@@ -84,7 +84,6 @@ class TaskGenerator(Task):
         self.text_response = text_response
         return True
     
-    @Task.record_step(TaskState.completed)
     def complete_task(self):
         """
         Complete the task based of the values from the AI gnerated response. Fill in the output_params for the task.
@@ -92,7 +91,6 @@ class TaskGenerator(Task):
         # This method should be overridden in subclasses to provide specific completion tasks
         return super().complete_task()
     
-    @Task.record_step(TaskState.input_required)
     def wait_on_dependency(self, timeout=180):
         """
         Wait for the Task to complete before proceeding.
@@ -120,9 +118,7 @@ class TaskGenerator(Task):
         if self._task_state != TaskState.working:
             self.initialize()
         
-        self.geneterate_tasks()
+        result = self.geneterate_tasks()
+        self.response = result
 
-        if not delay_waiting:
-            self.wait_on_dependency()
-            self.complete_task()
     # endregion task Methods

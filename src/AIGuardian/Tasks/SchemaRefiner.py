@@ -7,11 +7,11 @@ from a2a.types import (
     TaskState,
 )
 
-from .Task import Task
-from .TaskGenerator import TaskGenerator
-from .ColumnRefiner import ColumnRefiner
-from ..AIUtils import GenAIUtils
-from .TaskRegistry import TaskRegistry
+from src.AIGuardian.Tasks.Task import Task
+from src.AIGuardian.Tasks.TaskGenerator import TaskGenerator
+from src.AIGuardian.Tasks.ColumnRefiner import ColumnRefiner
+from src.AIGuardian.AIUtils import GenAIUtils
+from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
 
 @TaskRegistry.register("SchemaRefiner")
 class SchemaRefiner(TaskGenerator):
@@ -49,20 +49,23 @@ class SchemaRefiner(TaskGenerator):
         Generate tasks based on the schema.
         """
         self.child_task = [] if self.child_task is None else self.child_task
+        generated_tasks = []
+        print(f"SchemaRefiner: {type(self.input_params)}")
+        print(f"SchemaRefiner: {self.input_params}")
         for table_name, table_info in self.input_params.items():
             if isinstance(table_info, dict):
                 # Generate tasks for each table and its fields
+                print(f"SchemaRefiner: {table_info}")
                 task_parameters = {
                     "table_name": table_name,
                     "purpose": table_info["purpose"],
                     "fields": table_info["fields"]
                 }
                 task = ColumnRefiner(task_parameters, parent_task=self)
-                task.submit_task()
+                generated_tasks.append(task)
                 self.child_task.append(task.task_id)
-        return self.child_task
+        return generated_tasks
     
-    @Task.record_step(TaskState.completed)
     def complete_task(self):
         # Loop through the child tasks and rebuild the schema.
         d_tables = {}

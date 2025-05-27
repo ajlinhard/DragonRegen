@@ -13,9 +13,9 @@ from a2a.types import (
 )
 
 # Internal imports
-from ..AIUtils.GenAIUtils import GenAIUtils
-from .TaskExceptions import ValidateAIResponseError
-from ...MetaFort.AILoggingTopics import AILoggingTopics
+from src.AIGuardian.AIUtils.GenAIUtils import GenAIUtils
+from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
+from src.MetaFort.AILoggingTopics import AILoggingTopics
 from src.MetaFort.SysLogs.DatabaseEngine import DatabaseEngine
 from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
@@ -37,8 +37,6 @@ class Task(ABC):
         self.parent_task = parent_task
         self.child_task = []
         self.child_task_output_artifacts = {}
-        self.processed_comp_tasks = []
-        self.removed_comp_tasks = []
         # read-only properties
         self._name = self.__class__.__name__
         self._description = Task.get_description() # self.description 
@@ -141,6 +139,7 @@ class Task(ABC):
 
     # endregion Properties
 
+    # region logging
     def update_task_log(self, task_state, step_status=None, error_code=None, error_message=None):
         """
         Update the Task ID.
@@ -158,60 +157,12 @@ class Task(ABC):
             "metadata": json.dumps({"step_status": step_status}) if step_status else None,
         }
         return data_row
-
-    # region logging
-    def update_task(self, task_state, step_status=None, error_code=None, error_message=None):
-        """
-        Update the Task ID.
-        """
-        table = AILoggingTopics.AI_TASK_LOG_TOPIC
-        data_row = {
-            "task_log_id": uuid.uuid4().int,
-            "task_id": self.task_id,
-            "task_name": self.name,
-            "group_task_id": self.group_task_id,
-            "log_dt": datetime.datetime.now().isoformat(),
-            "task_state": self.task_state,
-            "error_code": error_code,
-            "error_message": error_message,
-            "error_timestamp": datetime.datetime.now().isoformat() if error_message else None,
-            "metadata": json.dumps({"step_status": step_status}) if step_status else None,
-        }
-        if isinstance(self.db_engine, KafkaEngine):
-            self.db_engine.insert(topic=table, data=data_row)
-        else:
-            self.db_engine.update(table=table, data=data_row, where={"task_id": self.task_id})
     
-    def record_step(task_state):
-        """
-        Decorator to record the step of the Task.
-        """
-        def record_decorator(func):
-            def wrapper(self, *args, **kwargs):
-                # Log the start of the step
-                func_name = func.__name__
-                self.update_task(task_state=task_state, step_status=f'{func_name} - PROCESSING')
-                try:
-                    # Call the original function
-                    result = func(self, *args, **kwargs)
-                    # Log the end of the step
-                    self.update_task(task_state=task_state, step_status=f'{func_name} - SUCCESS')
-                except Exception as e:
-                    # Log the error
-                    self._set_task_state_code('failed')
-                    self.update_task(task_state=task_state, step_status=f'{func_name} - FAILED', error_code=str(type(e)), error_message=str(e))
-                    raise e
-                return result
-            return wrapper
-        return record_decorator
-    
-    @record_step(TaskState.submitted)
     def submit_task(self, user_prompt=None):
         """
         Get the Task ID.
         """
         # put or pull from the database
-        table = AILoggingTopics.AI_TASK_TOPIC
         self.input_params['user_prompt'] = user_prompt
         data_row = {"task_id": self.task_id,
             "task_name": self.name,
@@ -224,10 +175,6 @@ class Task(ABC):
             "updated_dt": datetime.datetime.now().isoformat(),
             "input_artifacts": json.dumps(self.input_params) if isinstance(self.input_params, dict) and self.input_params else None,
         }
-        if isinstance(self.db_engine, KafkaEngine):
-            self.db_engine.insert(topic=table, data=data_row)
-        else:
-            self.db_engine.insert(table=table, data=data_row)
         return data_row
     
     # endregion logging
@@ -237,8 +184,6 @@ class Task(ABC):
         """
         Initialize the Task with the necessary parameters.
         """
-        if self.db_engine is None:
-            self.setup_db_engine()
         if self.ai_client is None:
             self.setup_client()
         self.setup_input_params()
@@ -259,13 +204,6 @@ class Task(ABC):
         load_dotenv()
         self.ai_client = Anthropic()
         # self.ai_client = AsyncAnthropic()
-
-    def setup_db_engine(self):
-        """
-        Setup the database engine for logging.
-        """
-        self.db_engine = DatabaseEngine.default_builder()
-        self.db_engine.connect()
 
     @abstractmethod
     def get_output_params_struct(self):
@@ -334,31 +272,13 @@ class Task(ABC):
         """
         # This method should be overridden in subclasses to provide specific completion Tasks
         self.is_completed = True
-        print(f"==> Task {self.task_id} complete_task")
-        self.db_engine.insert(
-            topic=AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
-            data={
-                "task_id": self.task_id,
-                "task_name": self.name,
-                "group_task_id": self.group_task_id,
-                "insert_dt": datetime.datetime.now().isoformat(),
-                "output_artifacts": json.dumps(self.output_params),
-            }
-        )
-        return self.output_params
-
-    @abstractmethod
-    @record_step(TaskState.input_required)
-    def wait_on_dependency(self, timeout=300):
-        """
-        Wait for the Task to complete before proceeding.
-        """
-        # This method should look at the completed topic for finished tasks or failed tasks.
-        start_time = datetime.datetime.now()
-        print(f"==> Waiting on {self.child_task} to complete.")
-        while self.child_task and (datetime.datetime.now() - start_time).total_seconds() < timeout:
-            completed_tasks = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=10)
-            self.wait_on_dependency_check(completed_tasks)
+        return {
+            "task_id": self.task_id,
+            "task_name": self.name,
+            "group_task_id": self.group_task_id,
+            "insert_dt": datetime.datetime.now().isoformat(),
+            "output_artifacts": json.dumps(self.output_params)
+        }
 
     def is_waiting(self):
         """
@@ -366,22 +286,18 @@ class Task(ABC):
         """
         return len(self.child_task) > 0
 
-    def wait_on_dependency_check(self, completed_tasks):
-        for topic_partition, messages in completed_tasks.items():
-            for message in messages:
-                if not isinstance(message.value, dict):
-                    task_json = json.loads(message.value.decode('utf-8'))
-                else:
-                    task_json = message.value
-                task_id = task_json.get("task_id")
-                self.processed_comp_tasks.append(task_id)
-                if task_id in self.child_task:
-                    print(f"==> Removing {task_id} from child tasks.")
-                    self.removed_comp_tasks.append(task_id)
-                    self.child_task.remove(task_id)
-                    self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
-        
-        return self.is_waiting()
+    def process_dependency_check(self, completed_tasks):
+        """
+        Check if the Task is still waiting for dependencies.
+        """
+        removed_child_tasks = []
+        for task_json in completed_tasks:
+            task_id = task_json.get("task_id")
+            if task_id in self.child_task:
+                print(f"==> Removing {task_id} from child tasks.")
+                self.child_task.remove(task_id)
+                self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
+        return removed_child_tasks
         
     def get_tools(self):
         """
@@ -499,11 +415,5 @@ class Task(ABC):
         # 3. If the output is valid, then log the Task to the database.
         result = self.generate_task()
         self.response = result
-        if not delay_waiting:
-            # Wait on dependencies
-            if self.child_task:
-                self.wait_on_dependency()
-            # Complete Task
-            self.complete_task()
         
         # endregion Task Methods

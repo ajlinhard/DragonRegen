@@ -6,10 +6,10 @@ from a2a.types import (
 )
 
 
-from .Task import Task
-from .TaskRegistry import TaskRegistry
-from .TaskExceptions import ValidateAIResponseError
-from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
+from src.AIGuardian.Tasks.Task import Task
+from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
+from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
+from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
 @TaskRegistry.register("TaskSayHello")
@@ -57,7 +57,7 @@ class TaskSayHello(Task):
         Generate a prompt for the task based on the user input.
         """
         # Alter input to try to format the response:
-        if user_prompt:
+        if not user_prompt:
             user_prompt = 'Hello there!'
         engineering_prompt = """{{prompt}}"""
         # Alter the prompt to include the JSON template:
@@ -96,7 +96,6 @@ class TaskSayHello(Task):
         self.text_response = text_response
         return True
     
-    @Task.record_step(TaskState.completed)
     def complete_task(self):
         """
         Complete the task based of the values from the AI gnerated response.

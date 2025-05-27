@@ -9,13 +9,13 @@ from a2a.types import (
     TaskState,
 )
 
-from ..AIUtils.GenAIUtils import GenAIUtils
-from .Task import Task
-from .TaskRegistry import TaskRegistry
-from .TaskExceptions import ValidateAIResponseError
-from ...DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
-from ...DataCreator.ColGenerators import *
-from ...DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
+from src.AIGuardian.AIUtils.GenAIUtils import GenAIUtils
+from src.AIGuardian.Tasks.Task import Task
+from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
+from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
+from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
+from src.DataCreator.ColGenerators import *
+from src.DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
 
 @TaskRegistry.register("DataColumnType")
 class DataColumnType(Task):
@@ -159,7 +159,6 @@ Output:
         """
         return GenAIUtils.validate_json(text_response)
     
-    @Task.record_step(TaskState.completed)
     def complete_task(self):
         """
         Complete the task based of the values from the AI gnerated response.
@@ -170,7 +169,6 @@ Output:
         self.is_completed = True
         return super().complete_task()
     
-    @Task.record_step(TaskState.input_required)
     def wait_on_dependency(self, timeout=300):
         """
         Wait for the Task to complete before proceeding.

@@ -1,0 +1,144 @@
+{
+  "companies": {
+    "purpose": "Stores information about the companies that provide ad data",
+    "fields": {
+      "company_id": "unique ID for each company",
+      "company_name": "name of the company",
+      "industry": "industry the company operates in",
+      "contact_info": "JSON object containing contact details",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "ad_campaigns": {
+    "purpose": "Tracks television ad campaigns run by companies",
+    "fields": {
+      "campaign_id": "unique ID for each campaign",
+      "company_id": "foreign key to companies table",
+      "campaign_name": "name of the campaign",
+      "start_date": "start date of the campaign",
+      "end_date": "end date of the campaign",
+      "budget": "total budget allocated for the campaign",
+      "target_audience": "JSON object describing target demographics",
+      "goals": "campaign objectives and KPIs",
+      "status": "current status of the campaign (active, completed, paused)",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "ad_creatives": {
+    "purpose": "Stores details about the creative content of ads",
+    "fields": {
+      "creative_id": "unique ID for each creative",
+      "campaign_id": "foreign key to ad_campaigns table",
+      "creative_name": "name of the creative",
+      "duration_seconds": "length of the ad in seconds",
+      "format": "format of the ad (video, animation, etc.)",
+      "content_url": "URL to the creative content",
+      "metadata": "JSON object with additional creative details",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "tv_networks": {
+    "purpose": "Information about television networks where ads are aired",
+    "fields": {
+      "network_id": "unique ID for each network",
+      "network_name": "name of the TV network",
+      "network_type": "type of network (cable, broadcast, streaming)",
+      "audience_demographics": "JSON object with viewer demographic information",
+      "reach": "estimated viewer reach",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "ad_spots": {
+    "purpose": "Records individual ad airings on TV networks",
+    "fields": {
+      "spot_id": "unique ID for each ad spot",
+      "campaign_id": "foreign key to ad_campaigns table",
+      "creative_id": "foreign key to ad_creatives table",
+      "network_id": "foreign key to tv_networks table",
+      "program_name": "name of the program during which the ad aired",
+      "air_datetime": "exact date and time when the ad aired",
+      "duration_seconds": "actual duration of the aired spot",
+      "cost": "cost of the ad spot",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "sales_data": {
+    "purpose": "Stores sales information for attribution analysis",
+    "fields": {
+      "sale_id": "unique ID for each sale record",
+      "company_id": "foreign key to companies table",
+      "product_id": "identifier for the product sold",
+      "sale_datetime": "date and time of the sale",
+      "amount": "monetary value of the sale",
+      "units_sold": "number of units sold",
+      "location": "geographic location of the sale",
+      "channel": "sales channel (online, in-store, etc.)",
+      "customer_id": "anonymized customer identifier",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "attribution_models": {
+    "purpose": "Defines different attribution models for analyzing ad effectiveness",
+    "fields": {
+      "model_id": "unique ID for each attribution model",
+      "model_name": "name of the attribution model",
+      "description": "detailed description of how the model works",
+      "parameters": "JSON object containing model parameters",
+      "created_by": "user who created the model",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "attribution_results": {
+    "purpose": "Stores results of attribution analysis linking ads to sales",
+    "fields": {
+      "result_id": "unique ID for each attribution result",
+      "campaign_id": "foreign key to ad_campaigns table",
+      "model_id": "foreign key to attribution_models table",
+      "time_period": "time period for the attribution analysis",
+      "attributed_sales": "total sales attributed to the campaign",
+      "attribution_percentage": "percentage of total sales attributed to the campaign",
+      "roi": "calculated return on investment",
+      "confidence_score": "statistical confidence in the attribution",
+      "detailed_results": "JSON object with detailed attribution metrics",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "data_sources": {
+    "purpose": "Tracks the various data sources feeding into the system",
+    "fields": {
+      "source_id": "unique ID for each data source",
+      "company_id": "foreign key to companies table",
+      "source_name": "name of the data source",
+      "source_type": "type of data provided (sales, ad spots, etc.)",
+      "connection_details": "JSON object with connection parameters",
+      "data_format": "format of the incoming data",
+      "refresh_frequency": "how often the data is updated",
+      "status": "current status of the data source",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  },
+  "data_quality_logs": {
+    "purpose": "Logs data quality issues and validation results",
+    "fields": {
+      "log_id": "unique ID for each log entry",
+      "source_id": "foreign key to data_sources table",
+      "check_datetime": "when the quality check was performed",
+      "check_type": "type of quality check performed",
+      "status": "result of the quality check (pass/fail)",
+      "issues_found": "number of issues identified",
+      "details": "JSON object with detailed information about issues",
+      "resolution_status": "status of issue resolution",
+      "created_at": "timestamp when the record was created",
+      "updated_at": "timestamp when the record was last updated"
+    }
+  }
+}

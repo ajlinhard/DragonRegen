@@ -53,6 +53,7 @@ class ColumnRefiner(TaskGenerator):
         Generate tasks based on the schema.
         """
         self.child_task = [] if self.child_task is None else self.child_task
+        generated_tasks = []
         self.data_column_refiner = []
         table_name = self.input_params.get("table_name")
         table_purpose = self.input_params.get("purpose")
@@ -65,15 +66,14 @@ class ColumnRefiner(TaskGenerator):
                 "description": col_description,
             }
             task_1 = DataColumnType(task_parameters, parent_task=self)
-            task_1.submit_task()
+            generated_tasks.append(task_1)
             self.child_task.append(task_1.task_id)
             task_2 = DataColumnRefiner(task_parameters, parent_task=task_1)
-            task_2.submit_task()
+            generated_tasks.append(task_2)
             self.child_task.append(task_2.task_id)
             self.data_column_refiner.append(task_2.task_id)
-        return self.child_task
+        return generated_tasks
     
-    @Task.record_step(TaskState.completed)
     def complete_task(self):
         # Loop through the child tasks and rebuild the schema.
         print(f"====> COLUMN REFINER XXXCC: Complete Task {self.task_id}")

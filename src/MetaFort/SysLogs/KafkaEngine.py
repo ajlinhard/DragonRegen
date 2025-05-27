@@ -208,6 +208,61 @@ class KafkaEngine():
             consumer.close()
 
     ## region Kafka Specific Tools
+    def search_kafka_by_time(self, topic, start_time, end_time, bootstrap_servers=['localhost:9092']):
+        """Search Kafka messages within a specific time range"""
+        
+        # Convert times to milliseconds since epoch
+        start_ms = int(start_time.timestamp() * 1000)
+        end_ms = int(end_time.timestamp() * 1000)
+        
+        consumer = KafkaConsumer(bootstrap_servers=bootstrap_servers)
+        
+        # Get partitions for the topic
+        partitions = consumer.partitions_for_topic(topic)
+        if not partitions:
+            print(f"Topic {topic} not found")
+            return []
+        
+        # Create TopicPartition objects
+        topic_partitions = [TopicPartition(topic, p) for p in partitions]
+        consumer.assign(topic_partitions)
+        
+        # Find offsets for the time range for each partition
+        timestamps = {tp: start_ms for tp in topic_partitions}
+        offsets = consumer.offsets_for_times(timestamps)
+        
+        # Assign starting positions
+        for tp, offset_and_timestamp in offsets.items():
+            if offset_and_timestamp:  # Can be None if no messages after start_time
+                consumer.seek(tp, offset_and_timestamp.offset)
+            else:
+                # No messages after start_time in this partition
+                consumer.seek_to_end(tp)
+        
+        # Search for messages within the time range
+        matches = []
+        for message in consumer:
+            # Stop if we're past the end time
+            if message.timestamp > end_ms:
+                break
+                
+            # Check if value matches
+            try:
+                value = json.loads(message.value.decode('utf-8'))
+            except:
+                value = message.value.decode('utf-8', errors='replace')
+                
+            # Your matching logic here (can reuse from previous example)
+            matches.append({
+                'topic': message.topic,
+                'partition': message.partition,
+                'offset': message.offset,
+                'timestamp': message.timestamp,
+                'value': value
+            })
+        
+        consumer.close()
+        return matches
 
     def search_batch_topic(self, topic_name, search_value, search_key:str=None, bootstrap_servers=['localhost:9092'], 
                         timeout_seconds=60, from_beginning=True, deserializer=None):
@@ -366,60 +421,3 @@ class KafkaEngine():
                 kafka_list.append(val)
         return kafka_list
     
-
-    def search_kafka_by_time(self, topic, search_value, start_time, end_time, bootstrap_servers=['localhost:9092']):
-        """Search Kafka messages within a specific time range"""
-        
-        # Convert times to milliseconds since epoch
-        start_ms = int(start_time.timestamp() * 1000)
-        end_ms = int(end_time.timestamp() * 1000)
-        
-        consumer = KafkaConsumer(bootstrap_servers=bootstrap_servers)
-        
-        # Get partitions for the topic
-        partitions = consumer.partitions_for_topic(topic)
-        if not partitions:
-            print(f"Topic {topic} not found")
-            return []
-        
-        # Create TopicPartition objects
-        topic_partitions = [TopicPartition(topic, p) for p in partitions]
-        consumer.assign(topic_partitions)
-        
-        # Find offsets for the time range for each partition
-        timestamps = {tp: start_ms for tp in topic_partitions}
-        offsets = consumer.offsets_for_times(timestamps)
-        
-        # Assign starting positions
-        for tp, offset_and_timestamp in offsets.items():
-            if offset_and_timestamp:  # Can be None if no messages after start_time
-                consumer.seek(tp, offset_and_timestamp.offset)
-            else:
-                # No messages after start_time in this partition
-                consumer.seek_to_end(tp)
-        
-        # Search for messages within the time range
-        matches = []
-        for message in consumer:
-            # Stop if we're past the end time
-            if message.timestamp > end_ms:
-                break
-                
-            # Check if value matches
-            try:
-                value = json.loads(message.value.decode('utf-8'))
-            except:
-                value = message.value.decode('utf-8', errors='replace')
-                
-            # Your matching logic here (can reuse from previous example)
-            if str(search_value) in str(value):
-                matches.append({
-                    'topic': message.topic,
-                    'partition': message.partition,
-                    'offset': message.offset,
-                    'timestamp': message.timestamp,
-                    'value': value
-                })
-        
-        consumer.close()
-        return matches
