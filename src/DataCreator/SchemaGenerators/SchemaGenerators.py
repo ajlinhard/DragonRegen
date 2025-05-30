@@ -1,6 +1,7 @@
  
 from abc import ABC, abstractmethod
 from pyspark.sql.types import *
+import json
 
 class SchemaGenerator(ABC):
     """
@@ -21,7 +22,10 @@ class SchemaGenerator(ABC):
             columns = table_info.get("fields", table_info.get("columns", []))
             for column in columns:
                 # schema = StructType.fromJson(schema)
-                column = dict(column)
+                if type(column) is str:
+                    column = json.loads(column)
+                else:
+                    column = dict(column)
                 if type(column) is not dict:
                     raise ValueError(f"Column for table key: {table_name} should be a dict, but was {type(column)}")
                 if "name" not in column.keys() or "type" not in column.keys():

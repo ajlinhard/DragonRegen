@@ -8,6 +8,7 @@ from a2a.types import (
     AgentSkill,
     TaskState,
 )
+from pydantic import BaseModel, Field
 
 from src.AIGuardian.AIUtils.GenAIUtils import GenAIUtils
 from src.AIGuardian.Tasks.Task import Task
@@ -16,6 +17,15 @@ from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
 from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from src.DataCreator.ColGenerators import *
 from src.DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
+
+class InputParams(BaseModel):
+    """
+    Represents the input parameters for the DataColumnRefiner task.
+    """
+    col_type: str = Field(default="ColBasic", description="The type of column to be refined.")
+    column_name: str = Field(..., description="The name of the column to be refined.")
+    description: str = Field(...,description="A brief description of the column's purpose.")
+    purpose: str = Field(...,description="The purpose of the table to which the column belongs.")
 
 @TaskRegistry.register("DataColumnRefiner")
 class DataColumnRefiner(Task):
@@ -48,15 +58,6 @@ class DataColumnRefiner(Task):
         return """You are an expert data engineer, with an innate ability to build schemas for data architectures of business request/requirements."""
     
     # endregion static variables
-    def get_output_params_struct(self):
-        """
-        A representtation of the output coming from this step. (output_type, output_struct_str)
-        """
-        # This method should be overridden in subclasses to provide specific output parameters
-        return {
-            "output_type": GenAIUtils.valid_output_type("JSON"),
-            "output_struct": self.column_type_JSON(),
-        }
 
     def column_type_JSON(self):
         """
@@ -82,6 +83,9 @@ class DataColumnRefiner(Task):
             o_generator = ColGenRegistry.get_col_generator("ColBasic")
             # raise ValueError(f"Unknown column type: {col_type}")
         return o_generator.get_examples()
+    
+    def setup_input_params(self):
+        InputParams(**self.input_params)
 
     # region task Methods
     def engineer_prompt(self, user_prompt):
@@ -149,12 +153,6 @@ class DataColumnRefiner(Task):
         self.is_completed = True
         return super().complete_task()
     
-    def wait_on_dependency(self, timeout=300):
-        """
-        Wait for the Task to complete before proceeding.
-        """
-        super().wait_on_dependency(timeout=timeout)
-
     def get_tools(self):
         """
         Get the tools for this task class or utility classes for the AI to consider using.

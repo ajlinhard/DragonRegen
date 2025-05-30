@@ -205,17 +205,6 @@ class Task(ABC):
         self.ai_client = Anthropic()
         # self.ai_client = AsyncAnthropic()
 
-    @abstractmethod
-    def get_output_params_struct(self):
-        """
-        A representtation of the output coming from this step. (output_type, output_struct_str)
-        """
-        # This method should be overridden in subclasses to provide specific output parameters
-        return {
-            "output_type": GenAIUtils.valid_output_type("Text"),
-            "output_struct": None,
-        }
-
     # region Task Methods
     @abstractmethod
     def engineer_prompt(self, user_prompt):
