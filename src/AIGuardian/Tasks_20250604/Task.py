@@ -24,31 +24,30 @@ class Task(ABC):
     def __init__(self, input_params={}, sequence_limit=10, verbose=False, parent_task=None):
         self.input_params = {} if input_params is None else input_params
         self.output_params = {}
-        self.output_artifacts = {}
         self.verbose = verbose
         # Task tree variables and identifiers
         self.task_id = str(uuid.uuid4())
         self.group_task_id = self.task_id 
         self.sequence = 0
         self.sequence_limit = sequence_limit
-        # Task specific variables
         self.user_prompt = None
         self.engineered_prompt = None
         self.response = None
         self.text_response = None
         self.parent_task = parent_task
-        # TODO create wait objects? so we can wait for diff reasons.
-        self.waiting_task_ids = []
-
+        self.child_task = []
+        self.child_task_output_artifacts = {}
         # read-only properties
         self._name = self.__class__.__name__
         self._description = Task.get_description() # self.description 
         self._task_type = Task.get_task_type()
+        self._task_version = Task.get_task_version()
         self._system_prompt = Task.get_system_prompt()
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["}"],
             "pref_model_type": "COMPLEX",
+            "ai_tools": self.get_tools(),
         }
         self._task_state = None
         self._task_state_code = 0
@@ -84,6 +83,11 @@ class Task(ABC):
     def get_task_type():
         return 'base_Task'
     
+    @staticmethod
+    @abstractmethod
+    def get_task_version():
+        return '0.0.1'
+
     @staticmethod
     @abstractmethod
     def get_system_prompt():
@@ -284,6 +288,13 @@ class Task(ABC):
                 self.child_task_output_artifacts[task_id] = task_json.get("output_artifacts", None)
         return removed_child_tasks
         
+    def get_tools(self):
+        """
+        Get the tools for this task class or utility classes for the AI to consider using.
+        """
+        # This method should be overridden in subclasses to provide specific tools
+        return []
+    
     def generate_task(self, retry_cnt=1, **kwargs):
         current_retry = 0
         # Set default values for parameters
