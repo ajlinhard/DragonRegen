@@ -1,5 +1,5 @@
 import json
-from ..ActionsFrame.ActionExceptions import ValidateAIResponseError
+from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
 
 class GenAIUtils():
     

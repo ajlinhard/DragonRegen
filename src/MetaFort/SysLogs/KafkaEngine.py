@@ -3,6 +3,8 @@ import json
 from datetime import datetime, timedelta
 import time
 import uuid
+from pydantic import BaseModel
+# Kafka Imports
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka import KafkaConsumer, TopicPartition
@@ -77,9 +79,10 @@ class KafkaEngine():
                         AILoggingTopics.AI_REQUEST_LOG_TOPIC,
                         AILoggingTopics.AI_TASK_LOG_TOPIC,
                         AILoggingTopics.AI_TASK_COMPLETED_TOPIC,
+                        AILoggingTopics.AI_TASK_ARTIFACTS_TOPIC,
                     ]  
-        partition_cnt = [5, 5, 5, 5]
-        replication_factor = [1, 1, 1, 1]
+        partition_cnt = [5, 5, 5, 5, 5]
+        replication_factor = [1, 1, 1, 1, 1]
         
         # zip together the topics and their configurations, to create them
         for topic, partitions, replication in zip(new_topics, partition_cnt, replication_factor):
@@ -134,6 +137,12 @@ class KafkaEngine():
                     bootstrap_servers=['localhost:9092'],
                     group_id=group_id.get(AILoggingTopics.AI_TASK_COMPLETED_TOPIC, f'task-completed-{kafka_engine.topic_uuid}'),
                     auto_offset_reset='latest')
+        if subset_objects == [] or AILoggingTopics.AI_TASK_ARTIFACTS_TOPIC in subset_objects:
+            kafka_engine.consumers[AILoggingTopics.AI_TASK_ARTIFACTS_TOPIC] = KafkaConsumer(
+                    AILoggingTopics.AI_TASK_ARTIFACTS_TOPIC,
+                    bootstrap_servers=['localhost:9092'],
+                    group_id=group_id.get(AILoggingTopics.AI_TASK_ARTIFACTS_TOPIC, f'task-artifact-{kafka_engine.topic_uuid}'),
+                    auto_offset_reset='latest')
         return kafka_engine
 
     def has_producer(self, topic: str) -> bool:
@@ -168,6 +177,8 @@ class KafkaEngine():
         Returns:
             bool: True if insertion was successful, False otherwise
         """
+        if isinstance(data, BaseModel):
+            data = data.model_dump_json().encode('utf-8')
         if isinstance(data, dict):
             data = json.dumps(data).encode('utf-8')
         

@@ -10,11 +10,11 @@ class AILoggingTopics():
       AI_TASK_TOPIC: {
     "purpose": "Highest level table representing a tasks ready to be picked up by system to complete.",
     "fields": [
-      {"name": "task_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the task"}},
+      {"name": "task_id", "type": "String", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the task"}},
       {"name": "task_name", "type": "String", "nullable": False, "metadata": {"description": "Name of the task"}},
       {"name": "task_version", "type": "String", "nullable": False, "metadata": {"description": "Then version of the task"}},
-      {"name": "parent_task_id", "type": "Integer", "nullable": True, "metadata": {"description": "self referencing key of the parent task"}},
-      {"name": "group_task_id", "type": "Integer", "nullable": True, "metadata": {"description": "Name of the a set of tasks that chained off each other. The value is the root task ID"}},
+      {"name": "parent_task_id", "type": "String", "nullable": True, "metadata": {"description": "self referencing key of the parent task"}},
+      {"name": "group_task_id", "type": "String", "nullable": True, "metadata": {"description": "Name of the a set of tasks that chained off each other. The value is the root task ID"}},
       {"name": "description", "type": "String", "nullable": True, "metadata": {"description": "Detailed description of the task's purpose"}},
       {"name": "sequence_number", "type": "Integer", "nullable": False, "metadata": {"description": "Order of execution within the parent task"}},
       {"name": "created_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the task was created"}},
@@ -22,12 +22,27 @@ class AILoggingTopics():
       {"name": "input_artifacts", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field for any additional task metadata"}}
     ]
   },
+  AI_TASK_ARTIFACTS_TOPIC: {
+    "purpose": "The place for all artifacts to be published.",
+    "fields": [
+      {"name": "artifactId", "type": "String", "nullable": False, "metadata": {"description": "Primary key, unique identifier for an artifact produced by a task"}},
+      {"name": "task_id", "type": "String", "nullable": False, "metadata": {"description": "Forgeign key, representing a specific task"}},
+      {"name": "group_task_id", "type": "String", "nullable": True, "metadata": {"description": "Name of the a set of tasks that chained off each other. The value is the root task ID"}},
+      {"name": "insert_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the task was completed"}},
+      # Google A2A Columns
+      {"name": "name", "type": "String", "nullable": False, "metadata": {"description": "Name of the task"}},
+      {"name": "description", "type": "JSON", "nullable": True, "metadata": {"description": "Human-readable description of the artifact."}},
+      {"name": "parts", "type": "Array", "nullable": False, "metadata": {"description": "Content of the artifact, as one or more Part objects. Must have at least one."}},
+      {"name": "metadata", "type": "JSON", "nullable": True, "metadata": {"description": "Arbitrary key-value metadata associated with the artifact."}},
+      {"name": "extensions", "type": "JSON", "nullable": True, "metadata": {"description": "A list of extension URIs that contributed to this artifact."}},
+    ]
+  },
   AI_TASK_COMPLETED_TOPIC: {
     "purpose": "Highest level table representing a tasks that completed",
     "fields": [
-      {"name": "task_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the task"}},
+      {"name": "task_id", "type": "String", "nullable": False, "metadata": {"description": "Foreign key, but still a unique identifier for the task"}},
       {"name": "task_name", "type": "String", "nullable": False, "metadata": {"description": "Name of the task"}},
-      {"name": "group_task_id", "type": "Integer", "nullable": True, "metadata": {"description": "Name of the a set of tasks that chained off each other. The value is the root task ID"}},
+      {"name": "group_task_id", "type": "String", "nullable": True, "metadata": {"description": "Name of the a set of tasks that chained off each other. The value is the root task ID"}},
       {"name": "insert_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the task was completed"}},
       {"name": "output_artifacts", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field for any additional task metadata"}}
     ]
@@ -35,8 +50,8 @@ class AILoggingTopics():
   AI_TASK_LOG_TOPIC: {
     "purpose": "Highest level object representing a group of related task or tasks",
     "fields": [
-      {"name": "task_log_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for this log"}},
-      {"name": "task_id", "type": "Integer", "nullable": False, "metadata": {"description": "Foreign key, unique identifier for the task"}},
+      {"name": "task_log_id", "type": "String", "nullable": False, "metadata": {"description": "Primary key, unique identifier for this log"}},
+      {"name": "task_id", "type": "String", "nullable": False, "metadata": {"description": "Foreign key, unique identifier for the task"}},
       {"name": "task_name", "type": "String", "nullable": False, "metadata": {"description": "Name of the task"}},
       {"name": "group_task_id", "type": "Integer", "nullable": True, "metadata": {"description": "Name of the a set of tasks that chained off each other. The value is the root task ID"}},
       {"name": "log_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "Timestamp when the task was last updated"}},
@@ -50,8 +65,8 @@ class AILoggingTopics():
   AI_REQUEST_LOG_TOPIC: {
     "purpose": "Lowest level object representing individual API calls to AI services",
     "fields": [
-      {"name": "request_id", "type": "Integer", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the request"}},
-      {"name": "task_id", "type": "Integer", "nullable": False, "metadata": {"description": "Foreign key referencing the task log"}},
+      {"name": "request_id", "type": "String", "nullable": False, "metadata": {"description": "Primary key, unique identifier for the request"}},
+      {"name": "task_id", "type": "String", "nullable": False, "metadata": {"description": "Foreign key referencing the task log"}},
       {"name": "insert_dt", "type": "Timestamp", "nullable": False, "metadata": {"description": "When the request was logged."}},
       {"name": "status", "type": "String", "nullable": True, "metadata": {"description": "Status of the request (SUCCESS, FAILURE, PENDING)"}},
       # Model specific fields
@@ -64,7 +79,7 @@ class AILoggingTopics():
       {"name": "api_request_id", "type": "String", "nullable": True, "metadata": {"description": "Foreign key referencing the request id returned by the API. Usually a "}},
       {"name": "raw_response", "type": "JSON", "nullable": True, "metadata": {"description": "Full raw response from the API"}},
       {"name": "parsed_results", "type": "JSON", "nullable": True, "metadata": {"description": "JSON field containing parsed/processed results"}},
-      {"name": "response_metadate", "type": "JSON", "nullable": True, "metadata": {"description": "Additional metadata from the API response"}},
+      {"name": "response_metadata", "type": "JSON", "nullable": True, "metadata": {"description": "Additional metadata from the API response"}},
       {"name": "input_tokens", "type": "Integer", "nullable": True, "metadata": {"description": "Number of tokens in the prompt (for LLM APIs)"}},
       {"name": "output_tokens", "type": "Integer", "nullable": True, "metadata": {"description": "Total tokens used to create the response (for LLM APIs)"}},
       {"name": "request_timestamp", "type": "Timestamp", "nullable": True, "metadata": {"description": "When the request was sent"}},

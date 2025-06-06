@@ -19,7 +19,7 @@ from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 from src.AIGuardian.Tasks.DataStructCreate import DataStructCreate
 from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
 
-class KafkaAgent:
+class KafkaAgentManager():
     def __init__(self, task_queue_topic: str=AILoggingTopics.AI_TASK_TOPIC, db_engine=None, group_id: str='default', end_processing: int=300):
         self.task_queue_topic = task_queue_topic
         self.group_id = group_id

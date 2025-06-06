@@ -6,14 +6,14 @@ from a2a.types import (
 )
 
 
-from src.AIGuardian.Tasks.Task import Task
+from src.AIGuardian.Tasks.TaskAI import TaskAI
 from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
 from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
 from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
 @TaskRegistry.register("TaskSayHello")
-class TaskSayHello(Task):
+class TaskSayHello(TaskAI):
 
     def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
         self.input_params = input_params
@@ -23,7 +23,6 @@ class TaskSayHello(Task):
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
             "pref_model_type": "SIMPLE",
-            "ai_tools": self.get_tools(),
         }
 
     # region static variables
@@ -45,14 +44,7 @@ class TaskSayHello(Task):
     
     # endregion static variables
 
-    def get_output_params_struct(self):
-        """
-        A representtation of the output coming from this step. (output_type, output_struct_str)
-        """
-        # This method should be overridden in subclasses to provide specific output parameters
-        return super().get_output_params_struct()
-
-    def engineer_prompt(self, user_prompt):
+    def engineer_prompt(self, user_prompt=None):
         """
         Generate a prompt for the task based on the user input.
         """
@@ -76,13 +68,6 @@ class TaskSayHello(Task):
             {"role": "user", "content": self.engineered_prompt},
         ]
     
-    def validate_parameters(self, parameters):
-        """
-        Validate the parameters for the task.
-        """
-        # This method should be overridden in subclasses to provide specific validation
-        return True
-    
     def hygiene_output(self, text_response):
         """
         Clean the output of the task.
@@ -103,30 +88,3 @@ class TaskSayHello(Task):
         # This method should be overridden in subclasses to provide specific completion tasks
         print(f"TaskSayHello complete_task: {self.text_response}")
         return super().complete_task()
-
-    def next_task(self):
-        """
-        Choose the next task based on the current task.
-        """
-        # This method should be overridden in subclasses to provide specific next tasks
-        return []
-
-    def get_tools(self):
-        """
-        Get the tools for this task class or utility classes for the AI to consider using.
-        """
-        # This method should be overridden in subclasses to provide specific tools
-        return []
-    
-    def wait_on_dependency(self):
-        """
-        Wait for the Task to complete before proceeding.
-        """
-        # This method should be overridden in subclasses to provide specific waiting Tasks
-        pass
-    
-    def run(self, user_prompt=None):
-        """
-        Run the task with the provided prompt.
-        """
-        super().run(user_prompt)

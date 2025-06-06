@@ -30,14 +30,13 @@ class InputParams(BaseModel):
 @TaskRegistry.register("DataColumnRefiner")
 class DataColumnRefiner(Task):
 
-    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
+    def __init__(self, input_params={}, sequence_limit=10, verbose=False, parent_task=None):
         self.input_params = input_params
         super().__init__(input_params=input_params, sequence_limit=sequence_limit, verbose=verbose, parent_task=parent_task)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
             "stop_sequences": ["</JSON_Template>"],
             "pref_model_type": "COMPLEX",
-            "ai_tools": self.get_tools(),
         }
 
     # region static variables
@@ -124,13 +123,6 @@ class DataColumnRefiner(Task):
             {"role": "assistant", "content": "<JSON_Template>\n{"}
         ]
     
-    def validate_parameters(self, parameters):
-        """
-        Validate the parameters for the task.
-        """
-        # This method should be overridden in subclasses to provide specific validation
-        return True
-    
     def hygiene_output(self, text_response):
         """
         Clean the output of the task.
@@ -152,12 +144,5 @@ class DataColumnRefiner(Task):
         # Check if the response is valid
         self.is_completed = True
         return super().complete_task()
-    
-    def get_tools(self):
-        """
-        Get the tools for this task class or utility classes for the AI to consider using.
-        """
-        # This method should be overridden in subclasses to provide specific tools
-        return [SchemaMSSQL.create_table]
     
     # endregion task Methods

@@ -10,7 +10,8 @@ from a2a.types import (
 )
 
 from src.AIGuardian.AIUtils.GenAIUtils import GenAIUtils
-from src.AIGuardian.Tasks.Task import Task
+from src.AIGuardian.AIDataModels.AILogs import TaskLog, TaskArtifact, LLMRequest
+from src.AIGuardian.Tasks.TaskAI import TaskAI
 from src.AIGuardian.Tasks.TaskRegistry import TaskRegistry
 from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
 from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
@@ -18,9 +19,9 @@ from src.DataCreator.ColGenerators import *
 from src.DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
 
 @TaskRegistry.register("DataColumnType")
-class DataColumnType(Task):
+class DataColumnType(TaskAI):
 
-    def __init__(self, input_params=None, sequence_limit=10, verbose=False, parent_task=None):
+    def __init__(self, input_params: dict={}, sequence_limit=10, verbose=False, parent_task=None):
         self.input_params = input_params
         super().__init__(input_params=input_params, sequence_limit=sequence_limit, verbose=verbose, parent_task=parent_task)
         self.model_parameters = {"max_tokens": 10000,
@@ -48,19 +49,6 @@ class DataColumnType(Task):
         return """You are an expert data engineer, with an innate ability to build schemas for data architectures of business request/requirements."""
     
     # endregion static variables
-
-    def get_output_params_struct(self):
-        """
-        A representtation of the output coming from this step. (output_type, output_struct_str)
-        """
-        # This method should be overridden in subclasses to provide specific output parameters
-        return {
-            "output_type": GenAIUtils.valid_output_type("JSON"),
-            "output_struct": {
-                "choice": str,
-                "reason": str
-            },
-        }
 
     # region task Methods
     def engineer_prompt(self, user_prompt=None):
@@ -140,13 +128,6 @@ Output:
             {"role": "assistant", "content": "<JSON_Template>\n{"}
         ]
     
-    def validate_parameters(self, parameters):
-        """
-        Validate the parameters for the task.
-        """
-        # This method should be overridden in subclasses to provide specific validation
-        return True
-    
     def hygiene_output(self, text_response):
         """
         Clean the output of the task.
@@ -165,21 +146,20 @@ Output:
         """
         self.output_params = json.loads(self.text_response)
         self.output_params['col_type'] = self.output_params.pop('choice')
+        # Write the message as a new TaskArtifact
+        data_row = {
+            "task_id": self.task_id,
+            "group_task_id": self.group_task_id,
+            "insert_dt": datetime.datetime.now().isoformat(),
+            "name": 'Column Type',
+            "description": self.input_params.get("description", ""),
+            "parts": [self.output_params],
+            "metadata": self.model_parameters,
+            "extensions": None   
+        }
+        self.output_artifacts.append(TaskArtifact(**data_row))
         # Check if the response is valid
         self.is_completed = True
         return super().complete_task()
-    
-    def wait_on_dependency(self, timeout=300):
-        """
-        Wait for the Task to complete before proceeding.
-        """
-        super().wait_on_dependency(timeout=timeout)
-
-    def get_tools(self):
-        """
-        Get the tools for this task class or utility classes for the AI to consider using.
-        """
-        # This method should be overridden in subclasses to provide specific tools
-        return [SchemaMSSQL.create_table]
     
     # endregion task Methods
