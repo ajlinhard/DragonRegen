@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-import datetime
+from pydantic import BaseModel, Field, computed_field
+from typing import Optional, List, Dict, Any
+from  datetime import datetime
 import json
 import uuid
 from dotenv import load_dotenv
@@ -13,7 +15,9 @@ from a2a.types import (
 )
 
 # Internal imports
-from src.AIGuardian.AIDataModels.AILogs import TaskLog, TaskCompleted
+from src.AIGuardian.AIDataModels.AILogs import TaskCompleted
+from src.AIGuardian.Tasks.Waiters.WaitTaskComplete import WaitTaskComplete
+from src.AIGuardian.Tasks.Waiters.WaitArtifact import WaitArtifact
 from src.AIGuardian.AIUtils.GenAIUtils import GenAIUtils
 from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
 from src.MetaFort.AILoggingTopics import AILoggingTopics
@@ -21,36 +25,34 @@ from src.MetaFort.SysLogs.DatabaseEngine import DatabaseEngine
 from src.MetaFort.SysLogs.KafkaEngine import KafkaEngine
 
 class Task(ABC):
+    task_id: str = Field(default=str(uuid.uuid4()), description="Primary key, unique identifier for the task")
+    task_name: str = Field(..., description="Name of the task")
+    parent_task_id: Optional[str] = None
+    group_task_id: Optional[str] = None
+    sequence: int = Field(default=0, description="Order of execution within the parent task")
+    task_state: TaskState = Field(default=TaskState.submitted, description="Current state of the task")
+    created_dt: datetime = Field(default=datetime.now(), description="Timestamp when the task was created")
+    updated_dt: datetime = Field(default=datetime.now(), description="Timestamp when the task was last updated")
+    input_artifacts: Dict[str, Any] = Field(default_factory=dict, description="Input artifacts for the task, can be parameters or data")
+    waiting_list: List[WaitTaskComplete] = Field(default_factory=list, description="List of tasks that are waiting for this task to complete")
 
-    def __init__(self, input_params={}, sequence_limit=10, verbose=False, parent_task=None):
-        self.input_params = {} if input_params is None else input_params
+    def __init__(self, sequence_limit=10, verbose=False, parent_task=None, **data):
+        super().__init__(**data)
         self.output_params = {}
         self.output_artifacts = []
         self.output_artifacts_pub_index = 0
         self.verbose = verbose
         self.parent_task = parent_task
         # Task tree variables and identifiers
-        self.task_id = str(uuid.uuid4())
         self.group_task_id = self.task_id 
-        self.sequence = 0
         self.sequence_limit = sequence_limit
-        self._task_state = None
-        self._task_state_code = 0
         self.is_completed = False
         self.user_prompt = None
 
-        # read-only properties
-        self._name = self.__class__.__name__
-        self._description = Task.get_description() # self.description 
-        self._task_type = Task.get_task_type()
-        self._system_prompt = Task.get_system_prompt()
-        self._task_version = Task.get_task_version()
-
-        # TODO create wait objects? so we can wait for diff reasons.
+        # processing list and function order
         self.waiting_list = []
         self.function_order = [self.initialize, self.complete_task]
         self.function_order_index = 0
-
 
         ## Initialize off parents
         if self.parent_task is not None:
@@ -59,20 +61,6 @@ class Task(ABC):
             self.ai_client = self.parent_task.ai_client
  
     # region static variables
-    @staticmethod
-    @abstractmethod
-    def get_description():
-        return 'The base Task class. This should be inherited by all Task classes.'
-    
-    @staticmethod
-    @abstractmethod
-    def get_task_type():
-        return 'base_Task'
-    
-    @staticmethod
-    @abstractmethod
-    def get_task_version():
-        return '0.0.1'
     
     @staticmethod
     @abstractmethod
@@ -82,42 +70,26 @@ class Task(ABC):
     # endregion static variables
 
     # region Properties
+    @computed_field
     @property
     def name(self):
-        return self._name
+        return self.__class__.__name__
     
+    @computed_field
     @property
     def description(self):
-        return self._description
-        # return self.__class__.get_description()
+        return 'The base Task class. This should be inherited by all Task classes.'
     
+    @computed_field
     @property
     def task_type(self):
-        return self._task_type
+        return 'Base'
     
+    @computed_field
     @property
     def task_version(self):
-        return self._task_version
+        return '0.0.1'
     
-    @property
-    def task_state(self):
-        return self._task_state
-    
-    @task_state.setter
-    def task_state(self, value):
-        self._set_task_state_code(value)
-        self._task_state = value
-
-    @task_version.setter
-    def task_state(self, value):
-        self._task_version = value
-
-    def _set_task_state_code(self, task_state):
-        """
-        Set the task_state code based on the task_state string.
-        """
-        self._task_state_code = TaskState(task_state)
-
     # endregion Properties
 
     # region logging
@@ -130,35 +102,14 @@ class Task(ABC):
             "task_id": self.task_id,
             "task_name": self.name,
             "group_task_id": self.group_task_id,
-            "log_dt": datetime.datetime.now().isoformat(),
+            "log_dt": datetime.now().isoformat(),
             "task_state": self.task_state,
             "error_code": error_code,
             "error_message": error_message,
-            "error_timestamp": datetime.datetime.now().isoformat() if error_message else None,
+            "error_timestamp": datetime.now().isoformat() if error_message else None,
             "metadata": json.dumps({"step_status": step_status}) if step_status else None,
         }
         return data_row
-    
-    def submit_task(self, user_prompt=None):
-        """
-        Get the Task ID.
-        """
-        # put or pull from the database
-        self.input_params['user_prompt'] = user_prompt
-
-        data_row = {"task_id": self.task_id,
-            "task_name": self.name,
-            "task_version": self.task_version,
-            "parent_task_id": self.parent_task.task_id if self.parent_task else None,
-            "group_task_id": self.group_task_id,
-            "description": self.description,
-            "sequence_number": self.sequence,
-            "created_dt": datetime.datetime.now().isoformat(),
-            "updated_dt": datetime.datetime.now().isoformat(),
-            "input_artifacts": self.input_params,
-            # "input_artifacts": json.dumps(self.input_params) if isinstance(self.input_params, dict) and self.input_params else None,
-        }
-        return TaskLog(**data_row)
     
     # endregion logging
 
@@ -167,16 +118,16 @@ class Task(ABC):
         """
         Initialize the Task with the necessary parameters.
         """
-        self.setup_input_params()
+        self.setup_input_artifacts()
         
-    def setup_input_params(self):
+    def setup_input_artifacts(self):
         """
         Setup the input parameters for the Task. Sometimes it will be mined or pulled from parent Tasks.
         """
         # TODO: May want to add a list of parameters to pull from the parent Task.
-        parent_task_params =  dict(**self.parent_task.input_params, **self.parent_task.output_params) if self.parent_task else {}
-        self.input_params = self.input_params if self.input_params is not None else {}
-        self.input_params = {**self.input_params, **parent_task_params}
+        parent_task_params =  dict(**self.parent_task.input_artifacts, **self.parent_task.output_params) if self.parent_task else {}
+        self.input_artifacts = self.input_artifacts if self.input_artifacts is not None else {}
+        self.input_artifacts = {**self.input_artifacts, **parent_task_params}
 
     def publish_artifacts(self):
         """
@@ -197,7 +148,7 @@ class Task(ABC):
             "task_id": self.task_id,
             "task_name": self.name,
             "group_task_id": self.group_task_id,
-            "insert_dt": datetime.datetime.now().isoformat(),
+            "insert_dt": datetime.now().isoformat(),
             "output_artifacts": self.output_params
         }
         self.output_artifacts.append(TaskCompleted(**data_row))
@@ -207,20 +158,22 @@ class Task(ABC):
         Check if the Task is still waiting for dependencies.
         """
         return len(self.waiting_list) > 0
+    
+    def remove_wait(self, waiter):
+        """
+        The Base callback function for calling the waiters. 
+        """
+        if waiter not in self.waiting_list:
+            raise ValueError(f"Waiter {waiter} not found in waiting list.")
+        self.waiting_list.remove(waiter)
 
-    def process_dependency_check(self, completed_tasks):
+    def check_dependency(self, dependency):
         """
         Check if the Task is still waiting for dependencies.
         """
-        removed_child_tasks = []
-        for task_json in completed_tasks:
-            task_id = task_json.get("task_id")
-            if task_id in self.waiting_list:
-                print(f"==> Removing {task_id} from child tasks.")
-                self.waiting_list.remove(task_id)
-                self.waiting_list[task_id] = task_json.get("output_artifacts", None)
-        return removed_child_tasks
-    
+        for waiter in self.waiting_list:
+            waiter.check_condition(dependency)
+
     def run(self, user_prompt=None):
         """
         Run the Task engine with the provided prompt.

@@ -47,7 +47,8 @@ class KafkaAgentManager():
         Submit a task to the Kafka topic.
         """
         # Create a task log entry
-        self.db_engine.insert(topic=AILoggingTopics.AI_TASK_TOPIC, data=task.submit_task(user_prompt=user_prompt))
+        task.input_artifacts['user_prompt'] = user_prompt
+        self.db_engine.insert(topic=AILoggingTopics.AI_TASK_TOPIC, data=task)
         self.task_log(task=task, step_status='TASK SUBMITTED')
 
     def wait_on_task(self, task_id, timeout=180):
@@ -127,10 +128,21 @@ class KafkaAgentManager():
         
         completed_tasks = self.db_engine.consumers[AILoggingTopics.AI_TASK_COMPLETED_TOPIC].poll(timeout_ms=1000, max_records=20)
         completed_tasks_json = self.kafka_records_to_list(completed_tasks, key='ALL')
+        completed_task_objects = [TaskCompleted(**task_json) for task_json in completed_tasks_json]
+
+        # Check for new Artifacts
+        new_artifacts = self.db_engine.consumers[AILoggingTopics.AI_TASK_ARTIFACTS_TOPIC].poll(timeout_ms=1000, max_records=20)
+        new_artifacts_json = self.kafka_records_to_list(new_artifacts, key='ALL')
+        new_artifacts_objects = [TaskCompleted(**task_json) for task_json in new_artifacts_json]
         
+        # Iterate through the completed tasks and check dependencies
+        for objects in [*completed_task_objects, *new_artifacts_objects]:
+            for waiting_task in self.waiting_tasks:
+                waiting_task.check_dependency(objects)
+        
+        # check if any task is done waiting
         tasks_to_remove = []
         for task in self.waiting_tasks:
-            task.process_dependency_check(completed_tasks_json)
             if not task.is_waiting():
                 tasks_to_remove.append(task)
                 self.task_log(task=task, step_status='TASK DONE WAITING')

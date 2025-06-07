@@ -1,33 +1,34 @@
 
 from datetime import datetime, timedelta
 from src.AIGuardian.Tasks.Waiters.Waiter import Waiter
+from src.AIGuardian.AIDataModels.AILogs import TaskLog, TaskArtifact
+from pydantic import BaseModel, Field
 
 class WaitArtifact(Waiter):
     """
-    Abstract base class for Waiters.
-    Waiters are used to pause execution until a certain condition is met.
+    WaitArtifact is a Waiter that pauses execution until a specific artifact is created by a task.
     """
-    def __init__(self, condition=None, timeout=600, callback=None):
+    def __init__(self, condition:tuple, timeout=600, callback=None):
         """
         Initializes the Waiter with a condition.
         
         :param condition: A callable that returns True when the condition is met.
         """
-        self.condition = condition
+        self.condition = condition # (task_id, artifact_name, artifact_model)
         self.wait_complete = False
         self.callback = callback
         self.timeout = timeout
         self.start_time = datetime.now()
 
-    def check_conditions(self, **kwargs):
+    def check_conditions(self, dependency: BaseModel, **kwargs):
         """
         This method should implement the logic to pause execution until the condition is met.
         """
-        task_id = kwargs.get('task_id', None)
-        if task_id == self.condition:
-            self.wait_complete = True
-            if self.all_conditions_met():
-                return self.callback(task_id) if self.callback else None
+        if isinstance(dependency, TaskArtifact):
+            if dependency.task_id == self.condition[0] and dependency.name == self.condition[1]:
+                self.wait_complete = True
+                if self.all_conditions_met():
+                    self.callback(self, TaskArtifact) if self.callback else None
         if self.has_timed_out():
             raise TimeoutError(f"Wait conditions have timed out after {self.timeout} seconds.")
 
@@ -43,4 +44,4 @@ class WaitArtifact(Waiter):
         
         :return: True if the timeout has been reached, False otherwise.
         """
-        return (datetime.now() - self.start_time) > timedelta(seconds=self.timeout)
+        return super().has_timed_out()

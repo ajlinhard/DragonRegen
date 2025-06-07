@@ -37,16 +37,6 @@ class ColumnRefiner(TaskGenerator):
 
     # endregion static variables
     
-    def get_output_params_struct(self):
-        """
-        A representtation of the output coming from this step. (output_type, output_struct_str)
-        """
-        # This method should be overridden in subclasses to provide specific output parameters
-        return {
-            "output_type": GenAIUtils.valid_output_type("taskList"),
-            "output_struct": [ColumnRefiner],
-        }
-    
     # region task Methods
     def geneterate_tasks(self):
         """

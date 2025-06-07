@@ -17,6 +17,7 @@ from src.AIGuardian.Tasks.TaskExceptions import ValidateAIResponseError
 from src.DataCreator.SchemaGenerators.SchemaMSSQL import SchemaMSSQL
 from src.DataCreator.ColGenerators import *
 from src.DataCreator.ColGenerators.ColGenRegistry import ColGenRegistry
+from src.AIGuardian.AIDataModels.AILogs import TaskLog, TaskArtifact
 
 class InputParams(BaseModel):
     """
@@ -31,7 +32,7 @@ class InputParams(BaseModel):
 class DataColumnRefiner(Task):
 
     def __init__(self, input_params={}, sequence_limit=10, verbose=False, parent_task=None):
-        self.input_params = input_params
+        self.input_params = InputParams(**input_params)
         super().__init__(input_params=input_params, sequence_limit=sequence_limit, verbose=verbose, parent_task=parent_task)
         self.model_parameters = {"max_tokens": 10000,
             "temperature": 0.1,
@@ -62,12 +63,8 @@ class DataColumnRefiner(Task):
         """
         Using the DataCreator column generators with the inpout parameters, generate a JSON representation of the column type.
         """
-        col_type = self.input_params.get("col_type")
         # TODO Implement code so the next 4 lines of code will acuatlly work.
-        o_generator = ColGenRegistry.get_col_generator(col_type)
-        if o_generator is None:
-            o_generator = ColGenRegistry.get_col_generator("ColBasic")
-            # raise ValueError(f"Unknown column type: {col_type}")
+        o_generator = ColGenRegistry.get_col_generator(self.input_params.col_type)
         col_type_json = o_generator.get_metadata_json()
         return {"name": "example_column", "type": "Integer", "nullable": True, "metadata": col_type_json}
 
@@ -75,17 +72,9 @@ class DataColumnRefiner(Task):
         """
         Using the DataCreator column generators with the inpout parameters, generate a JSON Example of the column type.
         """
-        col_type = self.input_params.get("col_type")
-        # TODO Implement code so the next 4 lines of code will acuatlly work.
-        o_generator = ColGenRegistry.get_col_generator(col_type)
-        if o_generator is None:
-            o_generator = ColGenRegistry.get_col_generator("ColBasic")
-            # raise ValueError(f"Unknown column type: {col_type}")
+        o_generator = ColGenRegistry.get_col_generator(self.input_params.col_type)
         return o_generator.get_examples()
     
-    def setup_input_params(self):
-        InputParams(**self.input_params)
-
     # region task Methods
     def engineer_prompt(self, user_prompt):
         """
@@ -108,7 +97,7 @@ class DataColumnRefiner(Task):
         </Examples>"""
         # Alter the prompt to include the JSON template:
         self.user_prompt = user_prompt
-        self.engineered_prompt = GenAIUtils.prompt_dict_substitute(engineering_prompt, **self.input_params)
+        self.engineered_prompt = GenAIUtils.prompt_dict_substitute(engineering_prompt, **self.input_params.model_dump())
         return self.engineered_prompt
     
     def get_messages(self):
@@ -134,6 +123,19 @@ class DataColumnRefiner(Task):
         Validate the output of the task.
         """
         return GenAIUtils.validate_json(text_response)
+    
+    def receive_artifact(self, artifact):
+        """
+        Receive an artifact from the AI response. This task expects an artifact of type 'Column Type'.
+        """
+        artifact_name = artifact.name
+        parts_list = artifact.parts
+        for part in parts_list:
+            if isinstance(part, str):
+                part = json.loads(part)
+            if artifact_name == "Column Type":
+                self.input_params.col_type = part.get("col_type", self.input_params.col_type)
+            
     
     def complete_task(self):
         """

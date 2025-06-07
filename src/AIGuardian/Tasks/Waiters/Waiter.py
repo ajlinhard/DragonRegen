@@ -1,23 +1,27 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from pydantic import BaseModel, Field
+from typing import Callable, Any
 
-class Waiter(ABC):
+class Waiter(ABC, BaseModel):
     """
     Abstract base class for Waiters.
     Waiters are used to pause execution until a certain condition is met.
     """
-    def __init__(self, condition=None, timeout=600, callback=None):
+    condition: Any = Field(..., description="A callable that returns True when the condition is met.")
+    callable: Callable = Field(..., description="A callback function to be executed when the condition is met.")
+    timeout: int = Field(default=600, description="Maximum time to wait for the condition to be met, in seconds.")
+    start_time: datetime = Field(default_factory=datetime.now, description="Timestamp when the waiter was initialized.")
+
+    def __init__(self, **data):
         """
         Initializes the Waiter with a condition.
         
         :param condition: A callable that returns True when the condition is met.
         """
-        self.condition = condition
+        super().__init__(**data)
         self.wait_complete = False
-        self.callback = callback
-        self.timeout = timeout
-        self.start_time = datetime.now()
 
     @abstractmethod
     def check_conditions(self, **kwargs):
